@@ -66,84 +66,99 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Chart.js Configuration for Revenue Overview ---
-    const ctx = document.getElementById('revenueChart').getContext('2d');
+    // --- Revenue Chart Logic ---
+    let revenueChartInstance = null;
 
-    // Gradient Fill
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(165, 0, 52, 0.2)'); // LG Red transparent
-    gradient.addColorStop(1, 'rgba(165, 0, 52, 0)');
+    function initRevenueChart() {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(165, 0, 52, 0.2)');
+        gradient.addColorStop(1, 'rgba(165, 0, 52, 0)');
 
-    const revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-            datasets: [{
-                label: 'Revenue',
-                data: [1200, 1500, 750, 1800, 2400, 2800], // Mock data shaped like the screenshot curve
-                borderColor: '#A50034', // LG Primary Red
-                backgroundColor: gradient,
-                borderWidth: 2,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#A50034',
-                pointRadius: 0, // Hidden points by default
-                pointHoverRadius: 4,
-                fill: true,
-                tension: 0.4 // Smooth curve
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                }
+        revenueChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: new Array(12).fill(0), // Start with 0s
+                    borderColor: '#A50034',
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#A50034',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: '#f1f3f5',
-                        borderDash: [5, 5]
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (val) => '$' + val }
                     },
-                    ticks: {
-                        callback: function (value) {
-                            return '$' + value;
-                        },
-                        color: '#868e96',
-                        font: {
-                            size: 11
-                        }
-                    },
-                    border: {
-                        display: false
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#868e96',
-                        font: {
-                            size: 11
-                        }
-                    },
-                    border: {
-                        display: false
-                    }
+                    x: { grid: { display: false } }
                 }
-            },
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
             }
+        });
+    }
+
+    async function loadRevenueData(year) {
+        if (!revenueChartInstance) return;
+
+        console.log(`Loading data for year: ${year}`);
+
+        // 1. Fetch Opportunities for selected year
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+
+        const { data: opportunities, error } = await supabase
+            .from('opportunities')
+            .select('amount, closing_date')
+            .gte('closing_date', startDate)
+            .lte('closing_date', endDate);
+
+        if (error) {
+            console.error('Error loading chart data:', error);
+            return;
         }
-    });
+
+        // 2. Process Data (Sum by Month)
+        const monthlyTotals = new Array(12).fill(0);
+
+        opportunities.forEach(opp => {
+            if (opp.closing_date && opp.amount) {
+                const date = new Date(opp.closing_date);
+                // Fix timezone issue by treating date as UTC component
+                const monthIndex = date.getUTCMonth();
+                monthlyTotals[monthIndex] += parseFloat(opp.amount);
+            }
+        });
+
+        // 3. Update Chart
+        revenueChartInstance.data.datasets[0].data = monthlyTotals;
+        revenueChartInstance.update();
+
+        // Update Total Sales KPI dynamically based on year
+        const totalYearSales = monthlyTotals.reduce((a, b) => a + b, 0);
+        document.querySelector('.kpi-main-value').textContent = '$' + totalYearSales.toLocaleString();
+    }
+
+    // Initialize Chart
+    initRevenueChart();
+
+    // Load initial data for current year
+    const yearFilter = document.getElementById('yearFilter');
+    if (yearFilter) {
+        loadRevenueData(yearFilter.value);
+
+        yearFilter.addEventListener('change', (e) => {
+            loadRevenueData(e.target.value);
+        });
+    }
 });
