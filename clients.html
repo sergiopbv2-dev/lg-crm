@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Gestión de Clientes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Specific Styles for Clients Page */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn-primary {
+            background-color: #A50034;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Table Styles */
+        .clients-table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: #6b7280;
+            font-weight: 500;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-spec {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .badge-end {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-dist {
+            background: #fef9c3;
+            color: #ca8a04;
+        }
+
+        .badge-inst {
+            background: #f3e8ff;
+            color: #9333ea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-circle">L</div>
+                <div class="logo-text">
+                    <h1>LG Electronics</h1>
+                    <span class="brand-tagline">Business Solutions</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-item">
+                    <span class="icon">⊞</span> Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">💼</span> Oportunidades
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📄</span> Cotizaciones
+                </a>
+                <a href="clients.html" class="nav-item active">
+                    <span class="icon">👥</span> Clientes
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">🕒</span> Reportes
+                </a>
+            </nav>
+
+            <div class="bottom-menu">
+                <a href="#" class="nav-item">
+                    <span class="icon">⚙️</span> Configuración
+                </a>
+                <a href="CRM/index.html" class="nav-item" onclick="sessionStorage.clear()">
+                    <span class="icon">↪️</span> Cerrar Sesión
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-header">
+                <h2>Gestión de Clientes</h2>
+                <button class="btn-primary" onclick="openModal()">
+                    + Nuevo Cliente
+                </button>
+            </div>
+
+            <div class="clients-table-container">
+                <table id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>RUT</th>
+                            <th>Contacto</th>
+                            <th>Tipo</th>
+                            <th>Dirección</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Clients will be loaded here -->
+                        <tr>
+                            <td colspan="5" style="text-align:center">Cargando clientes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="modal-overlay" id="clientModal">
+        <div class="modal-content">
+            <h3>Agregar Nuevo Cliente</h3>
+            <form id="clientForm">
+                <div class="form-group">
+                    <label>Nombre Compañía</label>
+                    <input type="text" id="companyName" required placeholder="Ej: Falabella">
+                </div>
+                <div class="form-group">
+                    <label>RUT Compañía</label>
+                    <input type="text" id="companyRut" required placeholder="Ej: 76.123.456-7">
+                </div>
+                <div class="form-group">
+                    <label>Nombre Contacto</label>
+                    <input type="text" id="contactName" required placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono / Celular</label>
+                    <input type="text" id="contactPhone" placeholder="+56 9...">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Cliente</label>
+                    <select id="clientType" required>
+                        <option value="Spec In">Spec In</option>
+                        <option value="End User">End User (Usuario Final)</option>
+                        <option value="Installer">Installer (Instalador)</option>
+                        <option value="Distributor">Distributor (Distribuidor)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Dirección</label>
+                    <input type="text" id="address" placeholder="Av. Principal 123...">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG & UTILS ---
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Check Login
+        if (!sessionStorage.getItem('isLoggedIn')) window.location.href = 'CRM/index.html';
+
+        // --- AUTH & PROFILE ---
+        // Load user simple info just to check connection
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) window.location.href = 'CRM/index.html';
+        }
+        checkUser();
+
+        // --- DOM ELEMENTS ---
+        const modal = document.getElementById('clientModal');
+        const form = document.getElementById('clientForm');
+        const tableBody = document.querySelector('#clientsTable tbody');
+
+        // --- FUNCTIONS ---
+        function openModal() { modal.style.display = 'flex'; }
+        function closeModal() { modal.style.display = 'none'; form.reset(); }
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // 1. LOAD CLIENTS
+        async function loadClients() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Fetch Profile to force RLS correct context if needed, though RLS works on UID
+            // Just fetch clients directly
+            const { data: clients, error } = await supabase
+                .from('clients')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error(error);
+                tableBody.innerHTML = `<tr><td colspan="5" style="color:red">Error cargando: ${error.message}</td></tr>`;
+                return;
+            }
+
+            renderTable(clients);
+        }
+
+        function renderTable(clients) {
+            tableBody.innerHTML = '';
+            if (clients.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No hay clientes registrados aún.</td></tr>';
+                return;
+            }
+
+            clients.forEach(client => {
+                let badgeClass = 'badge-dist';
+                if (client.client_type === 'Spec In') badgeClass = 'badge-spec';
+                if (client.client_type === 'End User') badgeClass = 'badge-end';
+                if (client.client_type === 'Installer') badgeClass = 'badge-inst';
+
+                const row = `
+                    <tr>
+                        <td style="font-weight:500">${client.company_name}</td>
+                        <td>${client.company_rut}</td>
+                        <td>
+                            <div>${client.contact_name || '-'}</div>
+                            <div style="font-size:0.8em; color:#6b7280">${client.contact_phone || ''}</div>
+                        </td>
+                        <td><span class="badge ${badgeClass}">${client.client_type}</span></td>
+                        <td style="font-size:0.9em; color:#4b5563">${client.address || '-'}</td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // 2. CREATE CLIENT
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get current user company_id logic is handled by RLS triggers usually?
+            // Wait, our RLS policy says: owner_company_id = (SELECT company_id FROM profiles...)
+            // So we NEED to send owner_company_id in the INSERT?
+            // Actually, RLS WITH CHECK enforces it matches, but we still need to provide the value OR have a trigger.
+            // Let's fetch the user's company_id first to be safe and explicit.
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
+
+            if (!profile) { alert('Error: Perfil no encontrado'); return; }
+
+            const newClient = {
+                company_name: document.getElementById('companyName').value,
+                company_rut: document.getElementById('companyRut').value,
+                contact_name: document.getElementById('contactName').value,
+                contact_phone: document.getElementById('contactPhone').value,
+                client_type: document.getElementById('clientType').value,
+                address: document.getElementById('address').value,
+                owner_company_id: profile.company_id // Assign to current user's company
+            };
+
+            const { error } = await supabase.from('clients').insert([newClient]);
+
+            if (error) {
+                alert('Error al guardar: ' + error.message);
+                console.error(error);
+            } else {
+                alert('¡Cliente creado exitosamente!');
+                closeModal();
+                loadClients(); // Refresh list
+            }
+        });
+
+        // Init
+        loadClients();
+
+    </script>
+</body>
+
+</html>
