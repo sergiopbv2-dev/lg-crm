@@ -349,11 +349,12 @@
 <body>
     <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="logo-container">
-            <div class="logo-circle">L</div>
-            <div class="logo-text">
-                <h1>LG Electronics</h1>
-                <span class="brand-tagline">Business Solutions</span>
+        <div class="logo-container brand-container">
+            <img src="https://www.lg.com/lg5-common/images/common/header-logo.svg" alt="LG Logo" class="brand-logo"
+                style="width: 80px; height: auto;">
+            <div class="brand-text">
+                <span class="brand-tagline" style="margin-top: 5px; color: #666; font-size: 0.7rem;">BUSINESS
+                    SOLUTIONS</span>
             </div>
         </div>
 
@@ -406,9 +407,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td colspan="5" style="text-align:center; padding:20px; color:#888;">Cargando clientes...</td>
-                    </tr>
+                    <td colspan="5" style="text-align:center; padding:20px; color:#888;">Buscando registros...</td>
                 </tbody>
             </table>
         </div>
@@ -501,7 +500,14 @@
             // Render
             tableBody.innerHTML = '';
             if (clients.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No hay clientes registrados aún.</td></tr>';
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding: 3rem;">
+                            <div style="font-size: 2rem; margin-bottom: 10px;">👥</div>
+                            <div style="font-weight: 500; font-size: 1.1rem; color: #333;">No hay clientes registrados aún</div>
+                            <div style="color: #666;">Haz clic en "Nuevo Cliente" para agregar uno.</div>
+                        </td>
+                    </tr>`;
                 return;
             }
 
