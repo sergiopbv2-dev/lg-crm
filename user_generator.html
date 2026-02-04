@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Usuarios Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 50px;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        #log {
+            margin-top: 20px;
+            text-align: left;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Generador de Usuarios Demo CRM</h1>
+    <p>Haz clic para crear las cuentas de Cosmoplas y Mar del Sur automáticamante.</p>
+    <button onclick="createUsers()">CREAR USUARIOS AHORA</button>
+    <div id="log"></div>
+
+    <script>
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function log(msg) {
+            document.getElementById('log').innerHTML += `<p>${msg}</p>`;
+        }
+
+        async function createUsers() {
+            log("Iniciando proceso...");
+
+            // 1. Crear Cosmoplas
+            log("--- Creando Usuario Cosmoplas ---");
+            const { data: u1, error: e1 } = await supabase.auth.signUp({
+                email: 'ventas@cosmoplas.cl',
+                password: 'lg123456'
+            });
+
+            if (e1) log("⚠️ Error/Info Cosmoplas: " + e1.message);
+            else if (u1.user) {
+                log("✅ Usuario Auth Creado. ID: " + u1.user.id);
+                await linkProfile(u1.user.id, 'Cosmoplas');
+            }
+
+            // 2. Crear Mar del Sur
+            log("--- Creando Usuario Mar del Sur ---");
+            const { data: u2, error: e2 } = await supabase.auth.signUp({
+                email: 'ventas@mardelsur.cl',
+                password: 'lg123456'
+            });
+
+            if (e2) log("⚠️ Error/Info Mar del Sur: " + e2.message);
+            else if (u2.user) {
+                log("✅ Usuario Auth Creado. ID: " + u2.user.id);
+                await linkProfile(u2.user.id, 'Mar del Sur');
+            }
+
+            log("=== PROCESO FINALIZADO ===");
+        }
+
+        async function linkProfile(userId, companyName) {
+            // Buscar ID de la empresa
+            const { data: company } = await supabase.from('companies').select('id').eq('name', companyName).single();
+            if (!company) return log("❌ Error: No encontré la empresa " + companyName);
+
+            // Actualizar perfil
+            const { error } = await supabase.from('profiles').update({
+                distributor_id: company.id,
+                role: 'user'
+            }).eq('id', userId);
+
+            if (error) log("❌ Error vinculando perfil: " + error.message);
+            else log("✅ Perfil vinculado exitosamente a " + companyName);
+        }
+    </script>
+</body>
+
+</html>
