@@ -5,12 +5,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LG Electronics | Gestión de Clientes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;700;800&display=swap"
+        rel="stylesheet">
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        /* Specific Styles for Clients Page */
+        /* --- INLINE CSS FROM STYLE.CSS (Bulletproof for Vercel) --- */
+        :root {
+            --bg-body: #f8f9fa;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #212529;
+            --text-secondary: #868e96;
+            --primary: #A50034;
+            /* LG Red */
+            --primary-hover: #b9003a;
+            --border-light: 1px solid #e9ecef;
+            --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04);
+            --font-main: 'Inter', sans-serif;
+            --font-heading: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-sidebar);
+            border-right: var(--border-light);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding: 5px 0;
+        }
+
+        .logo-circle {
+            width: 36px;
+            height: 36px;
+            background-color: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            font-family: var(--font-heading);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-heading);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .logo-text .brand-tagline {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background-color: #f8f9fa;
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background-color: #fff0f3;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .nav-item .icon {
+            font-size: 1.1rem;
+        }
+
+        .bottom-menu {
+            margin-top: auto;
+            border-top: var(--border-light);
+            padding-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -18,8 +158,14 @@
             margin-bottom: 2rem;
         }
 
+        .page-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
         .btn-primary {
-            background-color: #A50034;
+            background-color: var(--primary);
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
@@ -29,93 +175,22 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: opacity 0.2s;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 6px rgba(165, 0, 52, 0.2);
+            transition: transform 0.2s;
         }
 
         .btn-primary:hover {
-            opacity: 0.9;
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(2px);
-        }
-
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #374151;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-        }
-
-        /* Table Styles */
+        /* Table */
         .clients-table-container {
             background: white;
             border-radius: 12px;
             padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-card);
             overflow-x: auto;
         }
 
@@ -127,20 +202,32 @@
         th {
             text-align: left;
             padding: 1rem;
-            color: #6b7280;
+            color: var(--text-secondary);
             font-weight: 500;
-            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #e9ecef;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         td {
             padding: 1rem;
-            border-bottom: 1px solid #f3f4f6;
-            color: #1f2937;
+            border-bottom: 1px solid #f8f9fa;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #fafafa;
         }
 
         .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 99px;
+            padding: 4px 10px;
+            border-radius: 50px;
             font-size: 0.75rem;
             font-weight: 600;
         }
@@ -164,79 +251,168 @@
             background: #f3e8ff;
             color: #9333ea;
         }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h3 {
+            font-family: var(--font-heading);
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background: #f1f3f5;
+            color: #495057;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
     </style>
 </head>
 
 <body>
-    <div class="dashboard-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-container">
-                <div class="logo-circle">L</div>
-                <div class="logo-text">
-                    <h1>LG Electronics</h1>
-                    <span class="brand-tagline">Business Solutions</span>
-                </div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <div class="logo-circle">L</div>
+            <div class="logo-text">
+                <h1>LG Electronics</h1>
+                <span class="brand-tagline">Business Solutions</span>
             </div>
+        </div>
 
-            <nav class="nav-menu">
-                <a href="index.html" class="nav-item">
-                    <span class="icon">⊞</span> Dashboard
-                </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">💼</span> Oportunidades
-                </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">📄</span> Cotizaciones
-                </a>
-                <a href="clients.html" class="nav-item active">
-                    <span class="icon">👥</span> Clientes
-                </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">🕒</span> Reportes
-                </a>
-            </nav>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-item">
+                <span class="icon">⊞</span> Dashboard
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">💼</span> Oportunidades
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">📄</span> Cotizaciones
+            </a>
+            <a href="clients.html" class="nav-item active">
+                <span class="icon">👥</span> Clientes
+            </a>
+            <a href="#" class="nav-item">
+                <span class="icon">🕒</span> Reportes
+            </a>
+        </nav>
 
-            <div class="bottom-menu">
-                <a href="#" class="nav-item">
-                    <span class="icon">⚙️</span> Configuración
-                </a>
-                <a href="CRM/index.html" class="nav-item" onclick="sessionStorage.clear()">
-                    <span class="icon">↪️</span> Cerrar Sesión
-                </a>
-            </div>
-        </aside>
+        <div class="bottom-menu">
+            <a href="#" class="nav-item">
+                <span class="icon">⚙️</span> Configuración
+            </a>
+            <a href="CRM/index.html" class="nav-item" onclick="sessionStorage.clear()">
+                <span class="icon">↪️</span> Cerrar Sesión
+            </a>
+        </div>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="page-header">
-                <h2>Gestión de Clientes</h2>
-                <button class="btn-primary" onclick="openModal()">
-                    + Nuevo Cliente
-                </button>
-            </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <h2>Gestión de Clientes</h2>
+            <button class="btn-primary" onclick="openModal()">
+                + Nuevo Cliente
+            </button>
+        </div>
 
-            <div class="clients-table-container">
-                <table id="clientsTable">
-                    <thead>
-                        <tr>
-                            <th>Empresa</th>
-                            <th>RUT</th>
-                            <th>Contacto</th>
-                            <th>Tipo</th>
-                            <th>Dirección</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Clients will be loaded here -->
-                        <tr>
-                            <td colspan="5" style="text-align:center">Cargando clientes...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </main>
-    </div>
+        <div class="clients-table-container">
+            <table id="clientsTable">
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>RUT</th>
+                        <th>Contacto</th>
+                        <th>Tipo</th>
+                        <th>Dirección</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding:20px; color:#888;">Cargando clientes...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
 
     <!-- Modal Form -->
     <div class="modal-overlay" id="clientModal">
@@ -245,7 +421,7 @@
             <form id="clientForm">
                 <div class="form-group">
                     <label>Nombre Compañía</label>
-                    <input type="text" id="companyName" required placeholder="Ej: Falabella">
+                    <input type="text" id="companyName" required placeholder="Ej: Falabella retail">
                 </div>
                 <div class="form-group">
                     <label>RUT Compañía</label>
@@ -282,58 +458,47 @@
     </div>
 
     <script>
-        // --- CONFIG & UTILS ---
+        // --- SUPABASE CONFIG ---
         const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Check Login
-        if (!sessionStorage.getItem('isLoggedIn')) window.location.href = 'CRM/index.html';
-
-        // --- AUTH & PROFILE ---
-        // Load user simple info just to check connection
-        async function checkUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) window.location.href = 'CRM/index.html';
-        }
-        checkUser();
-
-        // --- DOM ELEMENTS ---
+        // UI Helpers
         const modal = document.getElementById('clientModal');
         const form = document.getElementById('clientForm');
         const tableBody = document.querySelector('#clientsTable tbody');
 
-        // --- FUNCTIONS ---
         function openModal() { modal.style.display = 'flex'; }
         function closeModal() { modal.style.display = 'none'; form.reset(); }
 
-        // Close on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
+        // Close modal on outside click
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-        // 1. LOAD CLIENTS
+        // --- LOGIC ---
+
+        // 1. Load Clients
         async function loadClients() {
+            // Check auth (simple)
+            const session = sessionStorage.getItem('isLoggedIn');
+            if (!session) { window.location.href = 'CRM/index.html'; return; }
+
+            // Get user to be sure context is right
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // Fetch Profile to force RLS correct context if needed, though RLS works on UID
-            // Just fetch clients directly
+            // Fetch
             const { data: clients, error } = await supabase
                 .from('clients')
                 .select('*')
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error(error);
-                tableBody.innerHTML = `<tr><td colspan="5" style="color:red">Error cargando: ${error.message}</td></tr>`;
+                console.error('Error fetching clients:', error);
+                tableBody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
                 return;
             }
 
-            renderTable(clients);
-        }
-
-        function renderTable(clients) {
+            // Render
             tableBody.innerHTML = '';
             if (clients.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">No hay clientes registrados aún.</td></tr>';
@@ -348,58 +513,61 @@
 
                 const row = `
                     <tr>
-                        <td style="font-weight:500">${client.company_name}</td>
+                        <td style="font-weight:600; color:#333;">${client.company_name}</td>
                         <td>${client.company_rut}</td>
                         <td>
-                            <div>${client.contact_name || '-'}</div>
-                            <div style="font-size:0.8em; color:#6b7280">${client.contact_phone || ''}</div>
+                            <div style="font-weight:500;">${client.contact_name || '-'}</div>
+                            <div style="font-size:0.8em; color:#868e96;">${client.contact_phone || ''}</div>
                         </td>
                         <td><span class="badge ${badgeClass}">${client.client_type}</span></td>
-                        <td style="font-size:0.9em; color:#4b5563">${client.address || '-'}</td>
+                        <td style="font-size:0.9em; color:#495057;">${client.address || '-'}</td>
                     </tr>
                 `;
                 tableBody.insertAdjacentHTML('beforeend', row);
             });
         }
 
-        // 2. CREATE CLIENT
+        // 2. Create Client
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.textContent = 'Guardando...'; btn.disabled = true;
 
-            // Get current user company_id logic is handled by RLS triggers usually?
-            // Wait, our RLS policy says: owner_company_id = (SELECT company_id FROM profiles...)
-            // So we NEED to send owner_company_id in the INSERT?
-            // Actually, RLS WITH CHECK enforces it matches, but we still need to provide the value OR have a trigger.
-            // Let's fetch the user's company_id first to be safe and explicit.
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                // Get profile to get company_id
+                const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
 
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
+                if (!profile) throw new Error('No se pudo identificar tu empresa');
 
-            if (!profile) { alert('Error: Perfil no encontrado'); return; }
+                const newClient = {
+                    company_name: document.getElementById('companyName').value,
+                    company_rut: document.getElementById('companyRut').value,
+                    contact_name: document.getElementById('contactName').value,
+                    contact_phone: document.getElementById('contactPhone').value,
+                    client_type: document.getElementById('clientType').value,
+                    address: document.getElementById('address').value,
+                    owner_company_id: profile.company_id
+                };
 
-            const newClient = {
-                company_name: document.getElementById('companyName').value,
-                company_rut: document.getElementById('companyRut').value,
-                contact_name: document.getElementById('contactName').value,
-                contact_phone: document.getElementById('contactPhone').value,
-                client_type: document.getElementById('clientType').value,
-                address: document.getElementById('address').value,
-                owner_company_id: profile.company_id // Assign to current user's company
-            };
+                const { error } = await supabase.from('clients').insert([newClient]);
 
-            const { error } = await supabase.from('clients').insert([newClient]);
+                if (error) throw error;
 
-            if (error) {
-                alert('Error al guardar: ' + error.message);
-                console.error(error);
-            } else {
-                alert('¡Cliente creado exitosamente!');
+                // Success
                 closeModal();
-                loadClients(); // Refresh list
+                loadClients();
+                alert('Cliente agregado exitosamente');
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                btn.textContent = originalText; btn.disabled = false;
             }
         });
 
-        // Init
+        // Initialize
         loadClients();
 
     </script>
