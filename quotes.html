@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Cotizador</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Estilos Específicos del Cotizador */
+        .quote-header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            font-family: var(--font-body);
+        }
+
+        /* Buscador de Productos */
+        .search-container {
+            position: relative;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .search-results {
+            margin-top: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #f1f3f5;
+            border-radius: 8px;
+            display: none;
+            /* Oculto por defecto */
+        }
+
+        .result-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #f1f3f5;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .result-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-model {
+            font-weight: 700;
+            color: #333;
+        }
+
+        .result-desc {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .result-price {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Tabla de Cotización */
+        .quote-table-container {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: var(--shadow-card);
+        }
+
+        .quote-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .quote-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .quote-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: middle;
+        }
+
+        .qty-input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .btn-remove {
+            color: #fa5252;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .summary-footer {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .total-box {
+            text-align: right;
+        }
+
+        .total-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .total-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #000;
+            font-family: var(--font-heading);
+        }
+
+        .btn-save {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(165, 0, 52, 0.3);
+        }
+
+        .discount-badge {
+            background: #e6fcf5;
+            color: #0ca678;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Eco Solution</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="#"><span class="icon">💼</span> Oportunidades</a></li>
+                    <li><a href="quotes.html" class="active"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
+                    <li><a href="#"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"
+                    onclick="sessionStorage.clear(); window.location.href='index.html'"><span class="icon">↪️</span>
+                    Salir</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-flex">
+                <h2>Nueva Cotización</h2>
+                <div class="user-badge" id="distributorName">Cargando empresa...</div>
+            </div>
+
+            <!-- Paso 1: Datos Generales -->
+            <div class="quote-header">
+                <div class="input-group">
+                    <label>Nombre del Proyecto</label>
+                    <input type="text" id="projectName" placeholder="Ej: Edificio Costanera - Torre B">
+                </div>
+                <div class="input-group">
+                    <label>Cliente</label>
+                    <select id="clientSelect">
+                        <option value="">Seleccione un Cliente...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Paso 2: Buscador -->
+            <div class="search-container">
+                <div class="input-group">
+                    <label>Buscar Producto (Modelo o Descripción)</label>
+                    <div class="search-box">
+                        <input type="text" id="productSearch" placeholder="Escribe 'Multi V' o 'PQWR'..."
+                            autocomplete="off">
+                        <button class="btn-search"
+                            style="padding: 0 1rem; border: none; background: #eee; border-radius: 8px; cursor: pointer;"
+                            onclick="forceSearch()">🔍</button>
+                    </div>
+                </div>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <!-- Paso 3: Tabla Detalle -->
+            <div class="quote-table-container">
+                <table class="quote-table" id="quoteTable">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>Descripción</th>
+                            <th>Precio Lista</th>
+                            <th>Descuento</th>
+                            <th>Precio Neto</th>
+                            <th>Cant.</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Items added dynamically -->
+                    </tbody>
+                </table>
+
+                <div class="summary-footer">
+                    <div class="total-box">
+                        <div class="total-label">PRECIO NETO TOTAL (USD)</div>
+                        <div class="total-value" id="grandTotal">$0.00</div>
+                    </div>
+                    <button class="btn-save" onclick="saveQuote()">Guardar Cotización</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- LOGIC -->
+    <script>
+        // Config Supabase
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // State
+        let currentUser = null;
+        let myDistributorId = null;
+        let myDiscounts = {}; // {'Multi-V': 45, 'Accesories': 40}
+        let quoteItems = []; // Array of objects
+
+        // init
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            // 1. Auth Check
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) { window.location.href = 'index.html'; return; }
+            currentUser = user;
+
+            // 2. Load Profile & Discounts
+            await loadProfileData();
+
+            // 3. Load Clients for Dropdown
+            loadClients();
+
+            // 4. Setup Search Listener
+            const searchInput = document.getElementById('productSearch');
+            searchInput.addEventListener('input', debounce(handleSearch, 300));
+            // Enter key trigger
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') forceSearch();
+            });
+        }
+
+        // Manual Search Trigger
+        function forceSearch() {
+            const input = document.getElementById('productSearch');
+            handleSearch({ target: input });
+        }
+
+        async function loadProfileData() {
+            try {
+                // Get Distributor ID from Profile
+                const { data: profile } = await supabase.from('profiles').select('distributor_id, companies(name)').eq('id', currentUser.id).single();
+
+                if (profile && profile.distributor_id) {
+                    myDistributorId = profile.distributor_id;
+                    document.getElementById('distributorName').textContent = profile.companies?.name || 'Distribuidor';
+
+                    // Get Discounts for this Distributor
+                    const { data: discounts } = await supabase
+                        .from('distributor_discounts')
+                        .select('category, discount_percent')
+                        .eq('distributor_id', myDistributorId);
+
+                    if (discounts) {
+                        discounts.forEach(d => {
+                            myDiscounts[d.category] = d.discount_percent;
+                        });
+                        console.log("Descuentos cargados:", myDiscounts);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading profile:", e);
+            }
+        }
+
+        async function loadClients() {
+            const { data: clients } = await supabase
+                .from('clients')
+                .select('id, company_name')
+                .eq('distributor_id', myDistributorId); // Only my clients
+
+            const select = document.getElementById('clientSelect');
+            if (clients) {
+                clients.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.company_name;
+                    select.appendChild(opt);
+                });
+            }
+        }
+
+        // --- SEARCH LOGIC ---
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => { clearTimeout(timeout); func(...args); };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        async function handleSearch(e) {
+            const query = e.target.value.trim();
+            const resultsContainer = document.getElementById('searchResults');
+
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            // Search in Supabase
+            const { data: products } = await supabase
+                .from('products')
+                .select('*')
+                .or(`model_suffix.ilike.%${query}%,model_short.ilike.%${query}%,description.ilike.%${query}%`)
+                .limit(10);
+
+            resultsContainer.innerHTML = '';
+            if (products && products.length > 0) {
+                resultsContainer.style.display = 'block';
+                products.forEach(prod => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.innerHTML = `
+                        <div class="result-info">
+                            <span class="result-model">${prod.model_short}</span>
+                            <span class="result-desc">${prod.description}</span>
+                        </div>
+                        <div class="result-price">$${prod.list_price}</div>
+                    `;
+                    div.onclick = () => addProductToQuote(prod);
+                    resultsContainer.appendChild(div);
+                });
+            } else {
+                resultsContainer.style.display = 'none';
+            }
+        }
+
+        function addProductToQuote(product) {
+            // 1. Calculate Discount
+            const discountPercent = myDiscounts[product.category] || 0; // Default 0 if no rule
+            const discountFactor = (100 - discountPercent) / 100;
+            const netPrice = (product.list_price * discountFactor).toFixed(2);
+
+            // 2. Add to Array
+            const item = {
+                id: product.id,
+                model: product.model_short,
+                desc: product.description,
+                listPrice: product.list_price,
+                discount: discountPercent,
+                netPrice: parseFloat(netPrice),
+                qty: 1
+            };
+
+            quoteItems.push(item);
+
+            // 3. Clear search
+            document.getElementById('productSearch').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#quoteTable tbody');
+            tbody.innerHTML = '';
+            let grandTotal = 0;
+
+            quoteItems.forEach((item, index) => {
+                const totalLine = item.netPrice * item.qty;
+                grandTotal += totalLine;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600">${item.model}</td>
+                    <td style="color:#666">${item.desc}</td>
+                    <td>$${item.listPrice}</td>
+                    <td><span class="discount-badge">${item.discount}% OFF</span></td>
+                    <td style="font-weight:700">$${item.netPrice}</td>
+                    <td>
+                        <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="updateQty(${index}, this.value)">
+                    </td>
+                    <td style="font-weight:700; color:var(--primary);">$${totalLine.toFixed(2)}</td>
+                    <td><button class="btn-remove" onclick="removeIdx(${index})">×</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('grandTotal').textContent = '$' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        }
+
+        window.updateQty = (index, newQty) => {
+            if (newQty < 1) newQty = 1;
+            quoteItems[index].qty = parseInt(newQty);
+            renderTable();
+        };
+
+        window.removeIdx = (index) => {
+            quoteItems.splice(index, 1);
+            renderTable();
+        };
+
+        window.saveQuote = async () => {
+            if (quoteItems.length === 0) return alert("Agrega productos primero");
+            const projectName = document.getElementById('projectName').value;
+            const clientId = document.getElementById('clientSelect').value;
+
+            if (!projectName) return alert("Escribe un nombre para el proyecto");
+
+            const total = quoteItems.reduce((sum, item) => sum + (item.netPrice * item.qty), 0);
+
+            // Insert Quote Header
+            const { data: quoteData, error: quoteError } = await supabase
+                .from('quotes')
+                .insert([{
+                    distributor_id: myDistributorId,
+                    user_id: currentUser.id,
+                    project_name: projectName,
+                    client_id: clientId || null, // Optional
+                    total_net_price: total,
+                    status: 'draft'
+                }])
+                .select()
+                .single();
+
+            if (quoteError) {
+                console.error(quoteError);
+                return alert("Error guardando: " + quoteError.message);
+            }
+
+            // Insert Items
+            const itemsToInsert = quoteItems.map(item => ({
+                quote_id: quoteData.id,
+                product_id: item.id,
+                quantity: item.qty,
+                unit_list_price: item.listPrice,
+                applied_discount: item.discount, // Snapshot del descuento
+                final_unit_price: item.netPrice,
+                total_line_price: item.netPrice * item.qty
+            }));
+
+            const { error: itemsError } = await supabase.from('quote_items').insert(itemsToInsert);
+
+            if (itemsError) {
+                alert("Cotización creada pero hubo error saving items");
+            } else {
+                alert("¡Cotización guardada exitosamente!");
+                location.reload(); // Refresh to clean
+            }
+        }
+    </script>
+</body>
+
+</html>
