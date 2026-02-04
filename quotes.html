@@ -244,6 +244,13 @@
                 <div class="user-badge" id="distributorName">Cargando...</div>
             </div>
 
+            <!-- Debug Log Area -->
+            <div id="debugLog"
+                style="background:#fff3cd; color:#856404; padding:15px; margin-bottom:20px; border-radius:8px; border:1px solid #ffeeba; display:none; font-family:monospace; font-size:0.9rem;">
+                <strong>Diagnóstico:</strong><br>
+                <span id="debugText"></span>
+            </div>
+
             <!-- Paso 1: Datos Generales -->
             <div class="quote-header">
                 <div class="input-group">
@@ -321,19 +328,41 @@
         // init
         document.addEventListener('DOMContentLoaded', init);
 
+        // ERROR LOGGING
+        function logMsg(msg, isError = false) {
+            const el = document.getElementById('debugLog');
+            const txt = document.getElementById('debugText');
+            if (isError) {
+                el.style.display = 'block';
+                el.style.backgroundColor = '#f8d7da';
+                el.style.color = '#721c24';
+            }
+            txt.innerHTML += (isError ? '❌ ' : '✅ ') + msg + '<br>';
+            console.log(msg);
+        }
+
         async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { window.location.href = 'index.html'; return; }
-            currentUser = user;
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError || !user) {
+                    logMsg("No hay usuario autenticado. Redirigiendo...", true);
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                    return;
+                }
+                currentUser = user;
+                logMsg("Usuario autenticado: " + user.email);
 
-            await loadProfileData();
-            loadClients();
+                await loadProfileData();
+                await loadClients();
 
-            const searchInput = document.getElementById('productSearch');
-            searchInput.addEventListener('input', debounce(handleSearch, 300));
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') forceSearch();
-            });
+                const searchInput = document.getElementById('productSearch');
+                searchInput.addEventListener('input', debounce(handleSearch, 300));
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') forceSearch();
+                });
+            } catch (err) {
+                logMsg("Error Crítico en Init: " + err.message, true);
+            }
         }
 
         function forceSearch() {
@@ -344,13 +373,20 @@
         async function loadProfileData() {
             try {
                 // Fetch Profile AND Role
-                const { data: profile } = await supabase
+                const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('role, distributor_id, companies(name)')
                     .eq('id', currentUser.id)
                     .single();
 
+                if (error) {
+                    logMsg("Error cargando perfil: " + error.message + " (" + error.code + ")", true);
+                    document.getElementById('distributorName').textContent = 'Error Perfil';
+                    return;
+                }
+
                 if (profile) {
+                    logMsg("Perfil cargado. Rol: " + (profile.role || 'user'));
                     // 1. Detect Admin
                     if (profile.role === 'admin') {
                         isAdmin = true;
@@ -360,6 +396,7 @@
 
                         myDiscounts = {};
                         myDistributorId = profile.distributor_id;
+                        logMsg("Modo Admin Activo.");
 
                     } else {
                         // 2. Normal User
