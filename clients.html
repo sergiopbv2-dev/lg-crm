@@ -311,6 +311,7 @@
                 </div>
                 <div class="form-group">
                     <label>Tipo de Cliente</label>
+                    <input type="hidden" id="distributorIdField" value="">
                     <select id="clientType" required>
                         <option value="Spec In">Spec In</option>
                         <option value="End User">End User (Usuario Final)</option>
@@ -480,17 +481,16 @@
                     const { data: { user } } = await supabase.auth.getUser();
                     if (!user) throw new Error("No estás autenticado");
 
-                    // Optional: Get Company ID specifically if your schema requires it
-                    // For now, we'll try to insert without owner_company_id if profile fails, 
-                    // or handle it gracefully.
-                    let companyId = null;
+                    // Get Profile to find Distributor ID - CRITICAL FOR SECURITY
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('company_id')
+                        .select('distributor_id')
                         .eq('id', user.id)
                         .single();
 
-                    if (profile) companyId = profile.company_id;
+                    if (!profile || !profile.distributor_id) {
+                        throw new Error('No tienes una empresa distribuidora asignada. Contacta al admin.');
+                    }
 
                     const newClient = {
                         company_name: document.getElementById('companyName').value,
@@ -499,7 +499,7 @@
                         contact_phone: document.getElementById('contactPhone').value,
                         client_type: document.getElementById('clientType').value,
                         address: document.getElementById('address').value,
-                        owner_company_id: companyId // Can be null if schema allows
+                        distributor_id: profile.distributor_id // CRITICAL: The security key
                     };
 
                     const { error } = await supabase.from('clients').insert([newClient]);
