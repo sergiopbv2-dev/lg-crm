@@ -5,151 +5,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LG Electronics | Gestión de Clientes</title>
+    <!-- Fonts matching index.html -->
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;700;800&display=swap"
         rel="stylesheet">
+
+    <!-- Link to Main CSS (Same as index.html) -->
+    <link rel="stylesheet" href="./style.css">
+
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* --- INLINE CSS FROM STYLE.CSS (Bulletproof for Vercel) --- */
-        :root {
-            --bg-body: #f8f9fa;
-            --bg-sidebar: #ffffff;
-            --bg-card: #ffffff;
-            --text-primary: #212529;
-            --text-secondary: #868e96;
-            --primary: #A50034;
-            /* LG Red */
-            --primary-hover: #b9003a;
-            --border-light: 1px solid #e9ecef;
-            --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.04);
-            --font-main: 'Inter', sans-serif;
-            --font-heading: 'Outfit', sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-primary);
-            font-family: var(--font-main);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-        }
-
-        /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background: var(--bg-sidebar);
-            border-right: var(--border-light);
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            flex-shrink: 0;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.02);
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
-            padding: 5px 0;
-        }
-
-        .logo-circle {
-            width: 36px;
-            height: 36px;
-            background-color: var(--primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 800;
-            font-size: 1.2rem;
-            font-family: var(--font-heading);
-        }
-
-        .logo-text {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .logo-text h1 {
-            font-family: var(--font-heading);
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin: 0;
-        }
-
-        .logo-text .brand-tagline {
-            font-size: 0.65rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .nav-menu {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
-            color: #495057;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-
-        .nav-item:hover {
-            background-color: #f8f9fa;
-            color: var(--primary);
-        }
-
-        .nav-item.active {
-            background-color: #fff0f3;
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .nav-item .icon {
-            font-size: 1.1rem;
-        }
-
-        .bottom-menu {
-            margin-top: auto;
-            border-top: var(--border-light);
-            padding-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
+        /* Specific Styles ONLY for Clients Page Components (Table & Modal) 
+           Everything else comes from style.css
+        */
 
         .page-header {
             display: flex;
@@ -161,35 +31,38 @@
         .page-header h2 {
             font-family: var(--font-heading);
             font-size: 1.8rem;
-            font-weight: 700;
+            font-weight: 800;
+            /* Matched to dashboard header */
+            color: #000;
         }
 
-        .btn-primary {
+        /* Button override to match btn-primary-lg but smaller if needed */
+        .btn-new-client {
             background-color: var(--primary);
             color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
             border: none;
             font-weight: 600;
             cursor: pointer;
-            display: flex;
+            box-shadow: 0 4px 10px rgba(165, 0, 52, 0.2);
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-            box-shadow: 0 4px 6px rgba(165, 0, 52, 0.2);
-            transition: transform 0.2s;
+            gap: 8px;
         }
 
-        .btn-primary:hover {
+        .btn-new-client:hover {
             background-color: var(--primary-hover);
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
-        /* Table */
+        /* Table Styles - Clean & Modern */
         .clients-table-container {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
             box-shadow: var(--shadow-card);
             overflow-x: auto;
         }
@@ -203,9 +76,9 @@
             text-align: left;
             padding: 1rem;
             color: var(--text-secondary);
-            font-weight: 500;
-            font-size: 0.85rem;
-            border-bottom: 2px solid #e9ecef;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #e9ecef;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -215,18 +88,16 @@
             border-bottom: 1px solid #f8f9fa;
             color: var(--text-primary);
             vertical-align: middle;
+            font-size: 0.9rem;
         }
 
         tr:last-child td {
             border-bottom: none;
         }
 
-        tr:hover td {
-            background-color: #fafafa;
-        }
-
+        /* Badges */
         .badge {
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 50px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -252,7 +123,7 @@
             color: #9333ea;
         }
 
-        /* Modal */
+        /* Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -269,11 +140,11 @@
 
         .modal-content {
             background: white;
-            padding: 2rem;
-            border-radius: 16px;
+            padding: 2.5rem;
+            border-radius: 20px;
             width: 100%;
-            max-width: 450px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
             animation: slideUp 0.3s ease;
         }
 
@@ -292,16 +163,18 @@
         .modal-content h3 {
             font-family: var(--font-heading);
             margin-bottom: 1.5rem;
-            color: #333;
+            color: #000;
+            font-size: 1.5rem;
+            font-weight: 700;
         }
 
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
             color: var(--text-secondary);
             font-size: 0.85rem;
             font-weight: 600;
@@ -310,17 +183,19 @@
         .form-group input,
         .form-group select {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.85rem;
             border: 1px solid #e9ecef;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s;
+            background: #f8f9fa;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             border-color: var(--primary);
+            background: #fff;
         }
 
         .modal-actions {
@@ -333,11 +208,12 @@
         .btn-secondary {
             background: #f1f3f5;
             color: #495057;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
             border: none;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            transition: background 0.2s;
         }
 
         .btn-secondary:hover {
@@ -347,71 +223,70 @@
 </head>
 
 <body>
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="logo-container brand-container">
-            <img src="https://www.lg.com/lg5-common/images/common/header-logo.svg" alt="LG Logo" class="brand-logo"
-                style="width: 80px; height: auto;">
-            <div class="brand-text">
-                <span class="brand-tagline" style="margin-top: 5px; color: #666; font-size: 0.7rem;">BUSINESS
-                    SOLUTIONS</span>
+    <div class="dashboard">
+        <!-- Sidebar (EXACT COPY FROM index.html) -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Business Solutions</span>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <nav class="nav-menu">
-            <a href="index.html" class="nav-item">
-                <span class="icon">⊞</span> Dashboard
-            </a>
-            <a href="#" class="nav-item">
-                <span class="icon">💼</span> Oportunidades
-            </a>
-            <a href="#" class="nav-item">
-                <span class="icon">📄</span> Cotizaciones
-            </a>
-            <a href="clients.html" class="nav-item active">
-                <span class="icon">👥</span> Clientes
-            </a>
-            <a href="#" class="nav-item">
-                <span class="icon">🕒</span> Reportes
-            </a>
-        </nav>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="#"><span class="icon">💼</span> Oportunidades</a></li>
+                    <li><a href="#"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li><a href="clients.html" class="active"><span class="icon">👥</span> Clientes</a></li>
+                    <li><a href="#"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
 
-        <div class="bottom-menu">
-            <a href="#" class="nav-item">
-                <span class="icon">⚙️</span> Configuración
-            </a>
-            <a href="CRM/index.html" class="nav-item" onclick="sessionStorage.clear()">
-                <span class="icon">↪️</span> Cerrar Sesión
-            </a>
-        </div>
-    </aside>
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear()"><span
+                        class="icon">↪️</span> Cerrar Sesión</a>
+            </div>
+        </aside>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="page-header">
-            <h2>Gestión de Clientes</h2>
-            <button class="btn-primary" onclick="openModal()">
-                + Nuevo Cliente
-            </button>
-        </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar (Optional, can copy from index if needed, but keeping it simple for now) -->
 
-        <div class="clients-table-container">
-            <table id="clientsTable">
-                <thead>
-                    <tr>
-                        <th>Empresa</th>
-                        <th>RUT</th>
-                        <th>Contacto</th>
-                        <th>Tipo</th>
-                        <th>Dirección</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <td colspan="5" style="text-align:center; padding:20px; color:#888;">Buscando registros...</td>
-                </tbody>
-            </table>
-        </div>
-    </main>
+            <div class="page-header">
+                <h2>Gestión de Clientes</h2>
+                <button class="btn-new-client" onclick="openModal()">
+                    <span>+</span> Nuevo Cliente
+                </button>
+            </div>
+
+            <div class="clients-table-container">
+                <table id="clientsTable">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>RUT</th>
+                            <th>Contacto</th>
+                            <th>Tipo</th>
+                            <th>Dirección</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding:3rem; color: var(--text-secondary);">
+                                Buscando registros...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
 
     <!-- Modal Form -->
     <div class="modal-overlay" id="clientModal">
@@ -450,7 +325,7 @@
 
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal()">Cancelar</button>
-                    <button type="submit" class="btn-primary">Guardar Cliente</button>
+                    <button type="submit" class="btn-new-client">Guardar Cliente</button>
                 </div>
             </form>
         </div>
@@ -477,15 +352,12 @@
 
         // 1. Load Clients
         async function loadClients() {
-            // Check auth (simple)
             const session = sessionStorage.getItem('isLoggedIn');
-            if (!session) { window.location.href = 'CRM/index.html'; return; }
+            if (!session) { window.location.href = 'index.html'; return; } // Redirect to index if not logged in (better than crm/index)
 
-            // Get user to be sure context is right
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            // Fetch
             const { data: clients, error } = await supabase
                 .from('clients')
                 .select('*')
@@ -493,7 +365,7 @@
 
             if (error) {
                 console.error('Error fetching clients:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="color:var(--danger); text-align:center;">Error: ${error.message}</td></tr>`;
                 return;
             }
 
@@ -505,7 +377,7 @@
                         <td colspan="5" style="text-align:center; padding: 3rem;">
                             <div style="font-size: 2rem; margin-bottom: 10px;">👥</div>
                             <div style="font-weight: 500; font-size: 1.1rem; color: #333;">No hay clientes registrados aún</div>
-                            <div style="color: #666;">Haz clic en "Nuevo Cliente" para agregar uno.</div>
+                            <div style="color: var(--text-secondary);">Haz clic en "Nuevo Cliente" para agregar uno.</div>
                         </td>
                     </tr>`;
                 return;
@@ -523,7 +395,7 @@
                         <td>${client.company_rut}</td>
                         <td>
                             <div style="font-weight:500;">${client.contact_name || '-'}</div>
-                            <div style="font-size:0.8em; color:#868e96;">${client.contact_phone || ''}</div>
+                            <div style="font-size:0.8em; color:var(--text-secondary);">${client.contact_phone || ''}</div>
                         </td>
                         <td><span class="badge ${badgeClass}">${client.client_type}</span></td>
                         <td style="font-size:0.9em; color:#495057;">${client.address || '-'}</td>
@@ -537,12 +409,11 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = form.querySelector('button[type="submit"]');
-            const originalText = btn.textContent;
-            btn.textContent = 'Guardando...'; btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Guardando...'; btn.disabled = true;
 
             try {
                 const { data: { user } } = await supabase.auth.getUser();
-                // Get profile to get company_id
                 const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single();
 
                 if (!profile) throw new Error('No se pudo identificar tu empresa');
@@ -561,19 +432,17 @@
 
                 if (error) throw error;
 
-                // Success
                 closeModal();
                 loadClients();
-                alert('Cliente agregado exitosamente');
+                // alert('Cliente agregado exitosamente'); // removed alert for smoother UX
 
             } catch (err) {
                 alert('Error: ' + err.message);
             } finally {
-                btn.textContent = originalText; btn.disabled = false;
+                btn.innerHTML = originalText; btn.disabled = false;
             }
         });
 
-        // Initialize
         loadClients();
 
     </script>
