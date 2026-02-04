@@ -241,7 +241,7 @@
         <main class="main-content">
             <div class="header-flex">
                 <h2>Nueva Cotización</h2>
-                <div class="user-badge" id="distributorName">Cargando empresa...</div>
+                <div class="user-badge" id="distributorName">Cargando...</div>
             </div>
 
             <!-- Paso 1: Datos Generales -->
@@ -314,34 +314,28 @@
         // State
         let currentUser = null;
         let myDistributorId = null;
-        let myDiscounts = {}; // {'Multi-V': 45, 'Accesories': 40}
-        let quoteItems = []; // Array of objects
+        let myDiscounts = {};
+        let quoteItems = [];
+        let isAdmin = false; // New Admin Flag
 
         // init
         document.addEventListener('DOMContentLoaded', init);
 
         async function init() {
-            // 1. Auth Check
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { window.location.href = 'index.html'; return; }
             currentUser = user;
 
-            // 2. Load Profile & Discounts
             await loadProfileData();
-
-            // 3. Load Clients for Dropdown
             loadClients();
 
-            // 4. Setup Search Listener
             const searchInput = document.getElementById('productSearch');
             searchInput.addEventListener('input', debounce(handleSearch, 300));
-            // Enter key trigger
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') forceSearch();
             });
         }
 
-        // Manual Search Trigger
         function forceSearch() {
             const input = document.getElementById('productSearch');
             handleSearch({ target: input });
@@ -349,24 +343,39 @@
 
         async function loadProfileData() {
             try {
-                // Get Distributor ID from Profile
-                const { data: profile } = await supabase.from('profiles').select('distributor_id, companies(name)').eq('id', currentUser.id).single();
+                // Fetch Profile AND Role
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, distributor_id, companies(name)')
+                    .eq('id', currentUser.id)
+                    .single();
 
-                if (profile && profile.distributor_id) {
-                    myDistributorId = profile.distributor_id;
-                    document.getElementById('distributorName').textContent = profile.companies?.name || 'Distribuidor';
+                if (profile) {
+                    // 1. Detect Admin
+                    if (profile.role === 'admin') {
+                        isAdmin = true;
+                        document.getElementById('distributorName').textContent = 'ADMINISTRADOR';
+                        document.getElementById('distributorName').style.backgroundColor = '#000';
+                        document.getElementById('distributorName').style.color = '#fff';
 
-                    // Get Discounts for this Distributor
-                    const { data: discounts } = await supabase
-                        .from('distributor_discounts')
-                        .select('category, discount_percent')
-                        .eq('distributor_id', myDistributorId);
+                        myDiscounts = {};
+                        myDistributorId = profile.distributor_id;
 
-                    if (discounts) {
-                        discounts.forEach(d => {
-                            myDiscounts[d.category] = d.discount_percent;
-                        });
-                        console.log("Descuentos cargados:", myDiscounts);
+                    } else {
+                        // 2. Normal User
+                        if (profile.distributor_id) {
+                            myDistributorId = profile.distributor_id;
+                            document.getElementById('distributorName').textContent = profile.companies?.name || 'Distribuidor';
+
+                            const { data: discounts } = await supabase
+                                .from('distributor_discounts')
+                                .select('category, discount_percent')
+                                .eq('distributor_id', myDistributorId);
+
+                            if (discounts) {
+                                discounts.forEach(d => { myDiscounts[d.category] = d.discount_percent; });
+                            }
+                        }
                     }
                 }
             } catch (e) {
@@ -375,12 +384,21 @@
         }
 
         async function loadClients() {
-            const { data: clients } = await supabase
-                .from('clients')
-                .select('id, company_name')
-                .eq('distributor_id', myDistributorId); // Only my clients
+            if (!myDistributorId && !isAdmin) return;
+
+            let query = supabase.from('clients').select('id, company_name');
+
+            // If normal user, filter by their distributor. 
+            // If Admin, theoretically could see all, but let's stick to assigned or all.
+            // Let's show ALL clients for Admin.
+            if (!isAdmin && myDistributorId) {
+                query = query.eq('distributor_id', myDistributorId);
+            }
+
+            const { data: clients } = await query;
 
             const select = document.getElementById('clientSelect');
+            select.innerHTML = '<option value="">Seleccione un Cliente...</option>'; // Reset
             if (clients) {
                 clients.forEach(c => {
                     const opt = document.createElement('option');
@@ -439,8 +457,9 @@
         }
 
         function addProductToQuote(product) {
-            // 1. Calculate Discount
-            const discountPercent = myDiscounts[product.category] || 0; // Default 0 if no rule
+            // 1. Calculate Discount (Admins get 0% default)
+            const discountPercent = isAdmin ? 0 : (myDiscounts[product.category] || 0);
+
             const discountFactor = (100 - discountPercent) / 100;
             const netPrice = (product.list_price * discountFactor).toFixed(2);
 
@@ -473,13 +492,37 @@
                 const totalLine = item.netPrice * item.qty;
                 grandTotal += totalLine;
 
+                // Discount Logic
+                let discountCellHTML = '';
+
+                if (isAdmin) {
+                    // ADMIN: Editable Input
+                    discountCellHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <input type="number" 
+                                value="${item.discount}" 
+                                min="0" max="100" 
+                                style="width:50px; padding:4px; border-radius:4px; border:1px solid #ccc; text-align:center;"
+                                onchange="updateDiscount(${index}, this.value)"
+                            >
+                            <span style="margin-left:4px; font-size:0.8rem;">%</span>
+                        </div>
+                    `;
+                } else {
+                    // USER: Fixed Badge
+                    const badgeStyle = item.discount > 0
+                        ? 'background: #e6fcf5; color: #0ca678;'
+                        : 'background: #f1f3f5; color: #868e96;';
+                    discountCellHTML = `<span style="padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; ${badgeStyle}">${item.discount}% OFF</span>`;
+                }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="font-weight:600">${item.model}</td>
                     <td style="color:#666">${item.desc}</td>
                     <td>$${item.listPrice}</td>
-                    <td><span class="discount-badge">${item.discount}% OFF</span></td>
-                    <td style="font-weight:700">$${item.netPrice}</td>
+                    <td>${discountCellHTML}</td>
+                    <td style="font-weight:700">$${item.netPrice.toFixed(2)}</td>
                     <td>
                         <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="updateQty(${index}, this.value)">
                     </td>
@@ -491,6 +534,21 @@
 
             document.getElementById('grandTotal').textContent = '$' + grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 });
         }
+
+        // New function for Admin to update discount
+        window.updateDiscount = (index, newDiscount) => {
+            let disc = parseFloat(newDiscount);
+            if (isNaN(disc) || disc < 0) disc = 0;
+            if (disc > 100) disc = 100;
+
+            // Recalculate
+            const item = quoteItems[index];
+            item.discount = disc;
+            const discountFactor = (100 - disc) / 100;
+            item.netPrice = parseFloat((item.listPrice * discountFactor).toFixed(2));
+
+            renderTable();
+        };
 
         window.updateQty = (index, newQty) => {
             if (newQty < 1) newQty = 1;
@@ -512,14 +570,17 @@
 
             const total = quoteItems.reduce((sum, item) => sum + (item.netPrice * item.qty), 0);
 
+            // If admin has no distributor_id locally, we might need a fallback.
+            if (!myDistributorId && !isAdmin) return alert("Error: No tienes empresa asignada");
+
             // Insert Quote Header
             const { data: quoteData, error: quoteError } = await supabase
                 .from('quotes')
                 .insert([{
-                    distributor_id: myDistributorId,
+                    distributor_id: myDistributorId, // Admin will save under their assigned company
                     user_id: currentUser.id,
                     project_name: projectName,
-                    client_id: clientId || null, // Optional
+                    client_id: clientId || null,
                     total_net_price: total,
                     status: 'draft'
                 }])
@@ -537,7 +598,7 @@
                 product_id: item.id,
                 quantity: item.qty,
                 unit_list_price: item.listPrice,
-                applied_discount: item.discount, // Snapshot del descuento
+                applied_discount: item.discount,
                 final_unit_price: item.netPrice,
                 total_line_price: item.netPrice * item.qty
             }));
@@ -548,7 +609,7 @@
                 alert("Cotización creada pero hubo error saving items");
             } else {
                 alert("¡Cotización guardada exitosamente!");
-                location.reload(); // Refresh to clean
+                location.reload();
             }
         }
     </script>
