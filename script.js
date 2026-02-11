@@ -12,26 +12,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // const isLoggedIn = sessionStorage.getItem('isLoggedIn'); // Removing strict check to allow Supabase Auth to handle it
     // if (!isLoggedIn) ... 
 
-    // Load User Profile Data
+    // --- AUTH & PROFILE LOGIC ---
     async function initDashboard() {
-        const { data: { user } } = await supabase.auth.getUser();
+        // 1. Check if user is logged in
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (!user) {
-            window.location.href = 'CRM/index.html'; // Redirect to Login
+        if (authError || !user) {
+            console.warn("No active session found. Redirecting to login...");
+            window.location.href = 'CRM/index.html'; // Force redirect
             return;
         }
 
-        // Show Dashboard and Hide Loader
+        // Show Dashboard and Hide Loader (if present)
         const dashboard = document.getElementById('dashboard');
         const loader = document.getElementById('auth-loading');
-        if (dashboard) dashboard.style.display = 'flex'; // Restore display (assuming flex or block, checking style.css next)
+        if (dashboard) dashboard.style.display = 'flex';
         if (loader) loader.style.display = 'none';
 
-        console.log("User found:", user.id);
+        console.log("User authenticated:", user.email);
 
-        console.log("User found:", user.id);
+        // --- PROFILE INTERACTION (Clickable Avatar) ---
+        const userProfile = document.querySelector('.user-profile-top');
+        if (userProfile) {
+            userProfile.style.cursor = 'pointer';
+            userProfile.title = 'Haz clic para cerrar sesión';
+            userProfile.onclick = async () => {
+                if (confirm("¿Deseas cerrar sesión?")) {
+                    await supabase.auth.signOut();
+                    sessionStorage.clear();
+                    window.location.href = 'CRM/index.html';
+                }
+            };
+        }
 
-        // 1. Get Profile
+        // 2. Load Profile Data
         let { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')

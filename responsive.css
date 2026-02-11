@@ -1,39 +1,41 @@
-/* Mobile Responsive Styles */
+/* Responsive & Mobile Menu Styles */
 
-/* Base Logic: Hide mobile elements on desktop */
+/* --- Mobile Menu Button --- */
 .mobile-menu-btn {
     display: none;
-    /* Hidden by default on desktop */
-    background: none;
+    /* Hidden on Desktop */
+    background: transparent;
     border: none;
-    font-size: 1.8rem;
-    /* Slightly larger */
+    font-size: 24px;
     cursor: pointer;
     color: #333;
-    /* Darker for better contrast */
-    margin-right: 15px;
-    padding: 5px;
-    line-height: 1;
+    padding: 8px;
+    margin-right: 10px;
+    z-index: 1001;
+    /* Ensure button is clickable */
 }
 
+/* Ensure header containers align items */
 .top-bar-left,
 .header-flex {
     display: flex;
     align-items: center;
 }
 
-/* Overlay for mobile sidebar */
+/* --- Sidebar Overlay (Backdrop) --- */
 .sidebar-overlay {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 998;
+    z-index: 2000;
+    /* High Z-index */
     opacity: 0;
     transition: opacity 0.3s ease;
+    backdrop-filter: blur(2px);
 }
 
 .sidebar-overlay.active {
@@ -41,144 +43,111 @@
     opacity: 1;
 }
 
-/* --- MEDIA QUERY: TABLETS & MOBILE (Below 1024px) --- */
+/* --- Mobile & Tablet Adjustments (Max Width 1024px) --- */
 @media (max-width: 1024px) {
 
-    /* Layout Changes */
-    .dashboard {
-        flex-direction: column;
-        position: relative;
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    /* Sidebar handling */
-    .sidebar {
-        position: fixed;
-        left: -260px;
-        /* Hide off-screen */
-        top: 0;
-        height: 100%;
-        z-index: 999;
-        transition: left 0.3s ease;
-        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar.active {
-        left: 0;
-        /* Slide in */
-    }
-
-    /* Show Hamburger Menu */
+    /* Show Hamburger Button */
     .mobile-menu-btn {
         display: block;
     }
 
-    /* Search Bar Adjustment */
-    .search-bar {
+    /* Dashboard Layout */
+    .dashboard {
+        flex-direction: column;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* Sidebar Transformation - REVISED v3 */
+    .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        /* Base position */
+        height: 100vh;
+        width: 250px;
+        background-color: #ffffff !important;
+        z-index: 2005 !important;
+        /* Very high */
+        transform: translateX(-100%);
+        /* Start hidden off-screen left */
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Active State */
+    .sidebar.active {
+        transform: translateX(0);
+        /* Slide into view */
+    }
+
+    /* Overlay */
+    .sidebar-overlay {
+        display: block;
+        /* Always block but opacity 0 initially */
+        opacity: 0;
+        pointer-events: none;
+        /* Click through when hidden */
+        /* ... other props ... */
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
-        max-width: 200px;
-        /* Smaller search on tablet */
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2004;
+        transition: opacity 0.3s ease;
     }
 
-    /* KPI Grid: 2 columns on tablet */
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+        /* Catch clicks when visible */
+    }
+
+    /* Search Bar & Top Elements */
+    .search-bar {
+        max-width: 100%;
+        flex: 1;
+    }
+
+    .user-badge {
+        display: none;
+        /* Hide on small mobile to save space, or adjust font */
+    }
+
+    /* Grids */
     .kpi-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+        /* Stack KPIs */
+        gap: 15px;
     }
 
-    /* Charts: 1 column on tablet/mobile */
     .charts-section {
         grid-template-columns: 1fr;
+        /* Stack Charts */
+    }
+
+    /* Adjust Main Content Padding */
+    .main-content {
+        padding: 15px;
+        padding-top: 10px;
     }
 }
 
-/* --- MEDIA QUERY: MOBILE PHONES (Below 768px) --- */
-@media (max-width: 768px) {
+/* --- Small Mobile Fixes (Max Width 480px) --- */
+@media (max-width: 480px) {
 
-    /* Main Content Padding */
-    .main-content {
-        padding: 15px;
-        /* Less padding */
-    }
-
-    /* Top Bar Stacking */
-    .top-bar {
-        gap: 10px;
-    }
-
-    /* Hide Search on very small screens or make it icon only (optional) */
-    /* For now, let's keep it but make it small */
-    .search-bar {
-        display: none;
-        /* Often cleaner to hide search on mobile dash unless clicked */
-    }
-
-    .user-details {
-        display: none;
-        /* Hide name/role, show only avatar */
-    }
-
-    .top-bar-actions {
-        gap: 15px;
-    }
-
-    /* KPI Grid: 1 column on mobile */
-    .kpi-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    .kpi-card {
-        min-height: auto;
-        /* Let content dictate height */
-        padding: 15px;
-    }
-
-    .kpi-main-value {
-        font-size: 1.5rem;
-    }
-
-    /* Typography Adjustments */
+    .header-flex h2,
     .dashboard-header h1 {
-        font-size: 1.4rem;
+        font-size: 1.25rem !important;
     }
 
-    .btn-primary-lg {
-        padding: 10px 16px;
-        font-size: 0.85rem;
-    }
-
-    /* Charts */
-    .chart-card {
-        height: auto;
-        min-height: 350px;
-    }
-
-    .chart-wrapper {
-        height: 250px !important;
-    }
-
-    /* Card Headers */
-    .chart-card .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .chart-card .card-header>div {
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-    }
-
-    /* Pipeline Details (Bottom) */
-    .view-toggles {
-        width: 100%;
-        justify-content: center;
-    }
-
-    .toggle-btn {
-        flex: 1;
-        text-align: center;
+    .user-profile,
+    .user-profile-top {
+        display: none;
+        /* Hide profile on very small screens to prioritize content */
     }
 }

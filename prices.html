@@ -176,8 +176,22 @@
             // Auth Check
             const { data: { user }, error: authError } = await client.auth.getUser();
             if (authError || !user) {
+                console.warn("No active session. Redirecting...");
                 window.location.href = 'CRM/index.html';
                 return;
+            }
+
+            // --- LOGOUT HANDLER ---
+            const userProfile = document.querySelector('.user-profile');
+            if (userProfile) {
+                userProfile.style.cursor = 'pointer';
+                userProfile.onclick = async () => {
+                    if (confirm("¿Cerrar sesión?")) {
+                        await client.auth.signOut();
+                        sessionStorage.deleteItem('isLoggedIn'); // if used
+                        window.location.href = 'CRM/index.html';
+                    }
+                };
             }
 
             if (true) {

@@ -495,17 +495,6 @@
                 }
                 db = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-                const { data: { user }, error: authErr } = await db.auth.getUser();
-                if (authErr || !user) {
-                    window.location.href = 'CRM/index.html';
-                    return;
-                }
-                if (user.email !== 'sergio.baez@lge.com' && user.email !== 'admin@lge.com') {
-                    // Temporarily allowing access for testing
-                    // alert("Acceso Restringido: Solo para administrador autorizado (Sergio Baez).");
-                    // window.location.href = 'index.html';
-                    console.warn("Access allowed for testing purposes.");
-                }
                 currentUser = user;
 
                 await loadProfileData();

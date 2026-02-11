@@ -420,6 +420,19 @@
                     return;
                 }
 
+                // Add Logout Handler to Badge if it exists (generic fallback)
+                const badge = document.querySelector('.user-badge');
+                if (badge) {
+                    badge.style.cursor = 'pointer';
+                    badge.onclick = async () => {
+                        if (confirm("¿Cerrar sesión?")) {
+                            await supabase.auth.signOut();
+                            sessionStorage.clear();
+                            window.location.href = 'CRM/index.html';
+                        }
+                    };
+                }
+
                 if (true) {
                     const nav = document.getElementById('nav-approvals');
                     if (nav) nav.style.display = 'block';

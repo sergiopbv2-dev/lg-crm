@@ -194,10 +194,25 @@
 
             const { data: { user }, error } = await db.auth.getUser();
             if (error || !user) {
+                console.warn("No active session. Redirecting...");
                 window.location.href = 'CRM/index.html';
                 return;
             }
             currentUser = user;
+
+            // --- LOGOUT HANDLER (Badge Click) ---
+            const badge = document.getElementById('distributorName');
+            if (badge) {
+                badge.style.cursor = 'pointer';
+                badge.title = 'Clic para cerrar sesión';
+                badge.onclick = async () => {
+                    if (confirm("¿Cerrar sesión?")) {
+                        await db.auth.signOut();
+                        sessionStorage.clear();
+                        window.location.href = 'CRM/index.html';
+                    }
+                };
+            }
 
             if (true) {
                 const nav = document.getElementById('nav-approvals');
