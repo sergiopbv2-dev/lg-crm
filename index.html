@@ -14,7 +14,10 @@
         rel="stylesheet">
 
     <!-- Styles -->
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css?v=2024">
+    <link rel="stylesheet" href="responsive.css">
+    <script src="mobile-menu.js" defer></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -98,9 +101,14 @@
         <main class="main-content">
             <!-- Top Bar -->
             <header class="top-bar">
-                <div class="search-bar">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" placeholder="Buscar cotizaciones, clientes">
+                <div class="top-bar-left">
+                    <button id="mobile-menu-btn" class="mobile-menu-btn">
+                        ☰
+                    </button>
+                    <div class="search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" placeholder="Buscar cotizaciones, clientes">
+                    </div>
                 </div>
 
                 <div class="top-bar-actions">

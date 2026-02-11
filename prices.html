@@ -13,7 +13,9 @@
         rel="stylesheet">
     <!-- Styles -->
     <link rel="stylesheet" href="style.css?v=2024">
+    <link rel="stylesheet" href="responsive.css">
     <!-- Scripts -->
+    <script src="mobile-menu.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
@@ -52,6 +54,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="top-bar">
+                <button id="mobile-menu-btn" class="mobile-menu-btn">☰</button>
                 <div class="search-bar">
                     <span class="search-icon">🔍</span>
                     <input type="text" placeholder="Buscar productos..." id="productSearch" oninput="filterProducts()">

@@ -75,6 +75,14 @@ body {
   display: none !important;
 }
 
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 10px;
+}
+
 /* Sidebar */
 .sidebar {
   width: 250px;

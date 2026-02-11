@@ -1,0 +1,184 @@
+/* Mobile Responsive Styles */
+
+/* Base Logic: Hide mobile elements on desktop */
+.mobile-menu-btn {
+    display: none;
+    /* Hidden by default on desktop */
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    /* Slightly larger */
+    cursor: pointer;
+    color: #333;
+    /* Darker for better contrast */
+    margin-right: 15px;
+    padding: 5px;
+    line-height: 1;
+}
+
+.top-bar-left,
+.header-flex {
+    display: flex;
+    align-items: center;
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* --- MEDIA QUERY: TABLETS & MOBILE (Below 1024px) --- */
+@media (max-width: 1024px) {
+
+    /* Layout Changes */
+    .dashboard {
+        flex-direction: column;
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Sidebar handling */
+    .sidebar {
+        position: fixed;
+        left: -260px;
+        /* Hide off-screen */
+        top: 0;
+        height: 100%;
+        z-index: 999;
+        transition: left 0.3s ease;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.active {
+        left: 0;
+        /* Slide in */
+    }
+
+    /* Show Hamburger Menu */
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    /* Search Bar Adjustment */
+    .search-bar {
+        width: 100%;
+        max-width: 200px;
+        /* Smaller search on tablet */
+    }
+
+    /* KPI Grid: 2 columns on tablet */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Charts: 1 column on tablet/mobile */
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- MEDIA QUERY: MOBILE PHONES (Below 768px) --- */
+@media (max-width: 768px) {
+
+    /* Main Content Padding */
+    .main-content {
+        padding: 15px;
+        /* Less padding */
+    }
+
+    /* Top Bar Stacking */
+    .top-bar {
+        gap: 10px;
+    }
+
+    /* Hide Search on very small screens or make it icon only (optional) */
+    /* For now, let's keep it but make it small */
+    .search-bar {
+        display: none;
+        /* Often cleaner to hide search on mobile dash unless clicked */
+    }
+
+    .user-details {
+        display: none;
+        /* Hide name/role, show only avatar */
+    }
+
+    .top-bar-actions {
+        gap: 15px;
+    }
+
+    /* KPI Grid: 1 column on mobile */
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .kpi-card {
+        min-height: auto;
+        /* Let content dictate height */
+        padding: 15px;
+    }
+
+    .kpi-main-value {
+        font-size: 1.5rem;
+    }
+
+    /* Typography Adjustments */
+    .dashboard-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .btn-primary-lg {
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+
+    /* Charts */
+    .chart-card {
+        height: auto;
+        min-height: 350px;
+    }
+
+    .chart-wrapper {
+        height: 250px !important;
+    }
+
+    /* Card Headers */
+    .chart-card .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .chart-card .card-header>div {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* Pipeline Details (Bottom) */
+    .view-toggles {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .toggle-btn {
+        flex: 1;
+        text-align: center;
+    }
+}
