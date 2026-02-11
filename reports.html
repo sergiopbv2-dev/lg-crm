@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Reportes</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2024">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        /* Body logic in style.css */
+
+
+        .report-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #eee;
+        }
+
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-info h3 {
+            margin: 0 0 8px 0;
+            color: #1a1a1a;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .report-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .btn-export {
+            background-color: #A50034;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(165, 0, 52, 0.2);
+        }
+
+        .btn-export:hover {
+            background-color: #8a002b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(165, 0, 52, 0.3);
+        }
+
+        .btn-export:disabled {
+            background-color: #ddd;
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .icon-excel {
+            font-size: 1.2em;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-badge {
+            padding: 0.5rem 1rem;
+            background: #e9ecef;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Eco Solutions</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span>
+                            Aprobaciones</a></li>
+                    <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
+                    <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li><a href="reports.html" class="active"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
+                        class="icon">↪️</span> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-flex">
+                <div>
+                    <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; color: #000;">
+                        Centro de Reportes
+                    </h2>
+                    <p style="color: #666; margin-top: 5px;">Descarga la información detallada de tu gestión.</p>
+                </div>
+                <div class="user-badge" id="distributorName">Cargando...</div>
+            </div>
+
+            <!-- Reporte 1: Oportunidades -->
+            <div class="report-card">
+                <div class="report-info">
+                    <h3>Reporte de Oportunidades (Full)</h3>
+                    <p>Exporta todas tus cotizaciones completas, incluyendo detalle de ítems, precios y estado.</p>
+                </div>
+                <button class="btn-export" onclick="exportOpportunities()" id="btnExportOpp">
+                    <span class="icon-excel">📊</span> Exportar Excel
+                </button>
+            </div>
+
+            <!-- Reporte 2: Clientes -->
+            <div class="report-card">
+                <div class="report-info">
+                    <h3>Reporte de Clientes</h3>
+                    <p>Listado completo de clientes registrados con sus datos de contacto y RUT.</p>
+                </div>
+                <button class="btn-export" onclick="exportClients()" id="btnExportCli">
+                    <span class="icon-excel">👥</span> Exportar Excel
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+
+        let db;
+        let currentUser = null;
+        let myDistributorId = null;
+        let isAdmin = false;
+
+        async function init() {
+            if (typeof window.supabase === 'undefined') {
+                return alert("Error: Supabase no cargó.");
+            }
+            db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+            const { data: { user }, error } = await db.auth.getUser();
+            if (error || !user) {
+                window.location.href = 'CRM/index.html';
+                return;
+            }
+            currentUser = user;
+
+            if (true) {
+                const nav = document.getElementById('nav-approvals');
+                if (nav) nav.style.display = 'block';
+            }
+
+            // Load Profile
+            const { data: profile } = await db.from('profiles').select('role, distributor_id').eq('id', user.id).single();
+
+            // Hardcoded Super Admin
+            if (user.email === 'admin@lge.com') {
+                isAdmin = true;
+                myDistributorId = null;
+                document.getElementById('distributorName').textContent = "ADMINISTRADOR (GLOBAL)";
+
+                // Show prices link
+                const navPrices = document.getElementById('nav-prices');
+                if (navPrices) navPrices.style.display = 'block';
+
+            } else if (profile) {
+                isAdmin = (profile.role === 'admin');
+                myDistributorId = profile.distributor_id;
+
+                if (isAdmin) {
+                    document.getElementById('distributorName').textContent = "ADMINISTRADOR/GERENTE";
+
+                    // Show prices link
+                    const navPrices = document.getElementById('nav-prices');
+                    if (navPrices) navPrices.style.display = 'block';
+
+                } else if (myDistributorId) {
+                    const { data: comp } = await db.from('companies').select('name').eq('id', myDistributorId).single();
+                    document.getElementById('distributorName').textContent = comp ? comp.name : "Distribuidor";
+                }
+            }
+        }
+
+        async function exportOpportunities() {
+            const btn = document.getElementById('btnExportOpp');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Generando..."; btn.disabled = true;
+
+            try {
+                // 1. Fetch Quotes
+                let q = db.from('quotes').select(`
+                    id, 
+                    quote_code, 
+                    project_name, 
+                    stage, 
+                    total_net_price, 
+                    created_at, 
+                    award_date,
+                    client_id,
+                    user_id,
+                    distributor_id,
+                    is_spec_in,
+                    is_retrofit,
+                    specified_brands,
+                    consultant_id,
+                    clients!client_id (company_name, company_rut)
+                `).order('created_at', { ascending: false });
+
+                if (!isAdmin) {
+                    q = q.eq('distributor_id', myDistributorId);
+                }
+
+                const { data: quotes, error } = await q;
+                if (error) throw error;
+
+                if (!quotes || quotes.length === 0) {
+                    alert("No hay cotizaciones para exportar.");
+                    return;
+                }
+
+                // 2. Fetch Profiles & Distributors Manually
+                const userIds = [...new Set(quotes.map(x => x.user_id).filter(Boolean))];
+                let usersMap = {};
+                if (userIds.length > 0) {
+                    const { data: us, error: uErr } = await db.from('profiles').select('id, full_name').in('id', userIds);
+                    if (!uErr && us) us.forEach(u => usersMap[u.id] = u.full_name);
+                }
+
+                const distIds = [...new Set(quotes.map(x => x.distributor_id).filter(Boolean))];
+                let distMap = {};
+                if (distIds.length > 0) {
+                    const { data: ds, error: dErr } = await db.from('companies').select('id, name').in('id', distIds);
+                    if (!dErr && ds) ds.forEach(d => distMap[d.id] = d.name);
+                }
+
+                // 2b. Fetch Consultants
+                const consultantIds = [...new Set(quotes.map(x => x.consultant_id).filter(Boolean))];
+                let consultantMap = {};
+                if (consultantIds.length > 0) {
+                    const { data: cons, error: cErr } = await db.from('clients').select('id, company_name').in('id', consultantIds);
+                    if (!cErr && cons) cons.forEach(c => consultantMap[c.id] = c.company_name);
+                }
+
+                // 3. Fetch Items
+                const quoteIds = quotes.map(x => x.id);
+                let items = [];
+                if (quoteIds.length > 0) {
+                    const { data: rawItems, error: iErr } = await db.from('quote_items').select(`
+                        quote_id,
+                        product_id,
+                        quantity,
+                        unit_list_price,
+                        applied_discount,
+                        final_unit_price,
+                        total_line_price,
+                        delivery_date
+                    `).in('quote_id', quoteIds);
+
+                    if (!iErr && rawItems) items = rawItems;
+                }
+
+                // 4. Fetch Products Manually
+                const productIds = [...new Set(items.map(i => i.product_id).filter(Boolean))];
+                let productsMap = {};
+                if (productIds.length > 0) {
+                    const { data: prods, error: pErr } = await db.from('products').select('id, model_short, description, category').in('id', productIds);
+                    if (!pErr && prods) prods.forEach(p => productsMap[p.id] = p);
+                }
+
+                // 5. Build Rows
+                const rows = [];
+                quotes.forEach(q => {
+                    const sellerName = usersMap[q.user_id] || 'N/A';
+                    const distName = distMap[q.distributor_id] || 'N/A';
+
+                    // Date Parsing for Analysis
+                    const cDate = new Date(q.created_at);
+                    const creationDateStr = cDate.toLocaleDateString();
+                    const creationMonth = cDate.getMonth() + 1; // 1-12
+                    const creationYear = cDate.getFullYear();
+
+                    const qItems = items.filter(i => i.quote_id === q.id);
+
+                    // Fetch Consultant Name
+                    // Note: We need to fetch consultant names. For optimization, we can fetch all needed consultants first or just show ID.
+                    // Ideally we should have fetched them in bulk. Let's do a quick bulk fetch improvement or just leave as is?
+                    // IMPROVEMENT: Let's fetch consultant names in step 6 (new) or just add to client fetch.
+
+                    const specBrands = q.specified_brands && q.specified_brands.length > 0 ? q.specified_brands.join(', ') : '';
+                    const isSpec = q.is_spec_in ? 'SÍ' : 'NO';
+                    const isRetro = q.is_retrofit ? 'SÍ' : 'NO';
+
+                    // Consultant Name Logic (Requires fetching consultant details)
+                    // Currently we don't have consultant map. Let's rely on Consultant ID or fetch them.
+                    // Better approach: In step 1, we could have fetched consultant? supabase doesn't support double embed of same table easily with different alias in one go without trickery.
+                    // Let's us separate fetch for consultants.
+
+                    // See 'ConsultantMap' below
+                    const consultantName = consultantMap[q.consultant_id] || '';
+
+                    if (qItems.length === 0) {
+                        rows.push({
+                            "Distribuidor": distName,
+                            "Código": q.quote_code,
+                            "Proyecto": q.project_name,
+                            "Cliente": q.clients?.company_name || 'N/A',
+                            "RUT Cliente": q.clients?.company_rut || 'N/A',
+                            "Consultor": consultantName,
+                            "Spec In (LG)": isSpec,
+                            "Retrofit": isRetro,
+                            "Espec. Competencia": specBrands,
+                            "Estado": q.stage,
+                            "Fecha Creación": creationDateStr,
+                            "Mes": creationMonth,
+                            "Año": creationYear,
+                            "Fecha Award": q.award_date || '',
+                            "Vendedor": sellerName,
+                            "Total Cotización (USD)": q.total_net_price,
+                            "Modelo": '', "Descripción": '', "Categoría": '',
+                            "Cantidad": 0, "Precio Lista": 0, "Descuento %": 0, "Precio Neto": 0, "Total Línea": 0,
+                            "Fecha Entrega": ''
+                        });
+                    } else {
+                        qItems.forEach(i => {
+                            const prod = productsMap[i.product_id] || {};
+                            rows.push({
+                                "Distribuidor": distName,
+                                "Código": q.quote_code,
+                                "Proyecto": q.project_name,
+                                "Cliente": q.clients?.company_name || 'N/A',
+                                "RUT Cliente": q.clients?.company_rut || 'N/A',
+                                "Consultor": consultantName,
+                                "Spec In (LG)": isSpec,
+                                "Retrofit": isRetro,
+                                "Espec. Competencia": specBrands,
+                                "Estado": q.stage,
+                                "Fecha Creación": creationDateStr,
+                                "Mes": creationMonth,
+                                "Año": creationYear,
+                                "Fecha Award": q.award_date || '',
+                                "Vendedor": sellerName,
+                                "Total Cotización (USD)": q.total_net_price,
+                                "Modelo": prod.model_short || '',
+                                "Descripción": prod.description || '',
+                                "Categoría": prod.category || '',
+                                "Cantidad": i.quantity,
+                                "Precio Lista (USD)": i.unit_list_price,
+                                "Descuento %": i.applied_discount,
+                                "Precio Neto (USD)": i.final_unit_price,
+                                "Total Línea (USD)": i.total_line_price,
+                                "Fecha Entrega": i.delivery_date || ''
+                            });
+                        });
+                    }
+                });
+
+                // Generate Excel
+                const ws = XLSX.utils.json_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Oportunidades");
+                XLSX.writeFile(wb, `Reporte_Oportunidades_Performance_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            } catch (e) {
+                console.error(e);
+                alert("Error exportando: " + e.message);
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        }
+
+        async function exportClients() {
+            const btn = document.getElementById('btnExportCli');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Generando..."; btn.disabled = true;
+
+            try {
+                let q = db.from('clients').select('*');
+                if (!isAdmin) {
+                    q = q.eq('distributor_id', myDistributorId);
+                }
+
+                const { data: clients, error } = await q;
+                if (error) throw error;
+
+                if (!clients || clients.length === 0) {
+                    alert("No hay clientes para exportar.");
+                    return;
+                }
+
+                const rows = clients.map(c => ({
+                    "Razón Social": c.company_name,
+                    "RUT": c.company_rut || '',
+                    "Email Contacto": c.contact_email || '',
+                    "Teléfono": c.phone || '',
+                    "Dirección": c.address || '',
+                    "Fecha Registro": c.created_at ? new Date(c.created_at).toLocaleDateString() : ''
+                }));
+
+                const ws = XLSX.utils.json_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+                XLSX.writeFile(wb, `Reporte_Clientes_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            } catch (e) {
+                console.error(e);
+                alert("Error exportando: " + e.message);
+            } finally {
+                btn.innerHTML = originalText; btn.disabled = false;
+            }
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'index.html'; // Or CRM/index.html
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

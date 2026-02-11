@@ -46,6 +46,11 @@
   padding: 0;
 }
 
+html {
+  font-size: 16px;
+  /* Enforce base size */
+}
+
 body {
   background-color: var(--bg-body);
   color: var(--text-primary);
@@ -54,6 +59,8 @@ body {
   -webkit-font-smoothing: antialiased;
   height: 100vh;
   overflow: hidden;
+  font-size: 16px;
+  /* Explicit pixel backup */
 }
 
 /* Dashboard Layout */
@@ -77,7 +84,10 @@ body {
   flex-direction: column;
   padding: 20px;
   flex-shrink: 0;
+  flex-shrink: 0;
   box-shadow: var(--shadow-sidebar);
+  font-size: 1rem;
+  /* Force Reset Inheritance */
 }
 
 .sidebar-header {
@@ -136,14 +146,17 @@ body {
 .sidebar-nav a {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  /* Slightly tighter gap */
   padding: 10px 14px;
   color: #495057;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 500;
   transition: var(--transition);
-  font-size: 0.95rem;
+  font-size: 14px !important;
+  /* Force Pixel Perfect */
+  line-height: normal;
 }
 
 .sidebar-nav a:hover {
@@ -159,7 +172,13 @@ body {
 }
 
 .sidebar-nav .icon {
-  font-size: 1.1rem;
+  font-size: 18px;
+  /* Fixed pixel size */
+  width: 24px;
+  /* Fixed width for alignment */
+  text-align: center;
+  display: inline-block;
+  margin-right: 4px;
 }
 
 .sidebar-footer {
@@ -289,6 +308,16 @@ body {
   color: #000;
 }
 
+/* Global Heading Standardization */
+h2,
+.page-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #000;
+  margin-bottom: 20px;
+}
+
 .dashboard-header h1 span {
   font-weight: 300;
   /* Lighter weight for "Overview" */
@@ -316,7 +345,7 @@ body {
 /* KPI Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-bottom: 30px;
 }
@@ -408,10 +437,10 @@ body {
 /* Chart Section */
 .charts-section {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  /* Equal width columns */
   gap: 20px;
-  height: 400px;
-  /* Fixed height for consistent layout */
+  /* Removed fixed height to adapt to content */
 }
 
 .chart-card {
@@ -421,6 +450,7 @@ body {
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
+  height: 400px;
 }
 
 .chart-card .card-header {
@@ -459,4 +489,349 @@ body {
   align-items: center;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+/* List Styles */
+.list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.data-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-date {
+  width: 60px;
+  height: 48px;
+  background: #fff0f3;
+  /* Default Red Tint */
+  color: #A50034;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  margin-right: 15px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.list-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-project {
+  display: block;
+  /* Ensure it takes its own line */
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.list-amount {
+  display: block;
+  /* Ensure it takes its own line */
+  font-size: 0.9rem;
+  color: #A50034;
+  font-weight: 700;
+}
+
+/* Grouped List Styles */
+.grouped-list .month-group {
+  margin-bottom: 20px;
+  border: 1px solid #f1f3f5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.month-header {
+  background: #fff0f3;
+  padding: 10px 15px;
+  font-weight: 700;
+  color: #A50034;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid #A50034;
+  cursor: pointer;
+  /* Hint at clickability if we add toggle later */
+}
+
+.month-name {
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.month-total {
+  font-size: 0.9rem;
+}
+
+.list-item.compact {
+  padding: 10px 15px;
+  background: #fff;
+}
+
+.list-item.compact:last-child {
+  border-bottom: none;
+}
+
+.list-date-small {
+  width: 40px;
+  height: 32px;
+  background: #fff0f3;
+  color: #A50034;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+/* Stage Badges */
+.badge-stage {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-stage.registration {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.badge-stage.access {
+  background-color: #fff3bf;
+  color: #f08c00;
+}
+
+.badge-stage.spec-in {
+  background-color: #d0ebff;
+  color: #1971c2;
+}
+
+.badge-stage.award {
+  background-color: #d3f9d8;
+  color: #2b8a3e;
+}
+
+.badge-stage.closed {
+  background-color: #339af0;
+  color: white;
+}
+
+.badge-stage.lost {
+  background-color: #ffe3e3;
+  color: #c92a2a;
+}
+
+.badge-stage.delete_pending {
+  background-color: #ffc9c9;
+  color: #e03131;
+  border: 1px dashed #e03131;
+}
+
+.badge-stage.lost_pending {
+  background-color: #ffd8a8;
+  color: #d9480f;
+  border: 1px dashed #d9480f;
+}
+
+/* Toggle Buttons for Charts */
+.view-toggles {
+  display: flex;
+  background: #f1f3f5;
+  padding: 2px;
+  border-radius: 6px;
+  gap: 2px;
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.toggle-btn.active {
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: var(--primary);
+  /* LG Red */
+  font-weight: 600;
+}
+
+/* --- Prices Page specific styles --- */
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: var(--text-primary);
+  border: 1px solid #dee2e6;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.btn-secondary-sm {
+  background-color: white;
+  color: var(--text-secondary);
+  border: 1px solid #e9ecef;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-secondary-sm:hover {
+  background-color: #f8f9fa;
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #f1f3f5;
+  padding-bottom: 2px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 2px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  /* Align with border-bottom */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--primary);
+  border-radius: 3px 3px 0 0;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Data Tables */
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #f1f3f5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f8f9fa;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+table tbody tr:hover {
+  background-color: #fcfcfc;
+}
+
+table tbody tr:last-child td {
+  border-bottom: none;
 }

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Prices Management</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css?v=2024">
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <div id="dashboard" class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Eco Solutions</span>
+                    </div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span> Aprobaciones</a></li>
+                    <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
+                    <li id="nav-prices" class="active" style="display: none;"><a href="#"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
+                <a href="CRM/index.html" class="footer-link"><span class="icon">↪️</span> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Buscar productos..." id="productSearch" oninput="filterProducts()">
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name">Usuario</span>
+                        <span class="user-role">Administrador</span>
+                    </div>
+                    <div class="avatar">U</div>
+                </div>
+            </header>
+
+            <div class="dashboard-header">
+                <h1>Product <span>Prices</span></h1>
+
+                <!-- Global List Actions -->
+                <div class="action-buttons" id="actions-global">
+                    <button onclick="downloadTemplate('products')" class="btn-secondary"
+                        style="border:1px dashed #adb5bd;">📄 Template List Price</button>
+                    <label for="uploadListPrice" class="btn-secondary">📤 Upload List Price</label>
+                    <input type="file" id="uploadListPrice" hidden accept=".csv, .xlsx"
+                        onchange="handleListUpload(this)">
+                </div>
+
+                <!-- Discount Actions -->
+                <div class="action-buttons" id="actions-discounts" style="display: none;">
+                    <button onclick="downloadTemplate('discounts')" class="btn-secondary"
+                        style="border:1px dashed #adb5bd;">📄 Template Discounts</button>
+                    <label for="uploadDiscount" class="btn-secondary">📤 Upload Discounts</label>
+                    <input type="file" id="uploadDiscount" hidden accept=".csv, .xlsx"
+                        onchange="handleDiscountUpload(this)">
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('global')">Global Price List</button>
+                <button class="tab-btn" onclick="switchTab('discounts')">Customer Discounts</button>
+            </div>
+
+            <!-- Content: Global List -->
+            <div id="tab-global" class="tab-content active">
+                <div class="card">
+                    <div class="table-container">
+                        <table id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>Model Code</th>
+                                    <th>List Price (USD)</th>
+                                    <th>Category</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="text-align:center;">Loading products...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content: Discounts -->
+            <div id="tab-discounts" class="tab-content" style="display:none;">
+                <div class="card">
+                    <div class="filter-header" style="margin-bottom:15px;">
+                        <h3 style="margin: 0; margin-bottom: 10px; font-size: 1.1em; color: #495057;">Select Customer
+                        </h3>
+                        <select id="clientSelect" onchange="loadDiscounts(this.value)">
+                            <option value="">Select Customer...</option>
+                        </select>
+                    </div>
+                    <div class="table-container">
+                        <table id="discountsTable">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Category</th>
+                                    <th>Discount %</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" style="text-align:center;">Select a customer to view discounts.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Diagnostic Script -->
+    <script>console.log("Prices Page Loaded");</script>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log("DOM Content Loaded");
+
+            if (typeof window.supabase === 'undefined') {
+                alert("CRITICAL ERROR: Supabase library not loaded.");
+                return;
+            }
+
+            // Init Supabase
+            const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+            const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+            // Auth Check
+            const { data: { user }, error: authError } = await client.auth.getUser();
+            if (authError || !user) {
+                window.location.href = 'CRM/index.html';
+                return;
+            }
+
+            if (true) {
+                const nav = document.getElementById('nav-approvals');
+                if (nav) nav.style.display = 'block';
+            }
+
+            // Check Admin
+            let isAdmin = false;
+            if (user.email === 'admin@lge.com') {
+                isAdmin = true;
+            } else {
+                const { data: profile } = await client.from('profiles').select('role').eq('id', user.id).single();
+                if (profile && profile.role === 'admin') {
+                    isAdmin = true;
+                }
+            }
+
+            if (isAdmin) {
+                const navPrices = document.getElementById('nav-prices');
+                if (navPrices) navPrices.style.display = 'block';
+            } else {
+                alert("Acceso denegado: Solo administradores.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Update UI
+            document.querySelector('.user-name').textContent = user.email;
+
+            // --- DEFINE FUNCTIONS FIRST ---
+
+            window.switchTab = function (tab) {
+                document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+                document.getElementById(`tab-${tab}`).style.display = 'block';
+                event.target.classList.add('active');
+
+                // Toggle Actions
+                if (tab === 'global') {
+                    document.getElementById('actions-global').style.display = 'flex';
+                    document.getElementById('actions-discounts').style.display = 'none';
+                    loadProducts();
+                }
+                if (tab === 'discounts') {
+                    document.getElementById('actions-global').style.display = 'none';
+                    document.getElementById('actions-discounts').style.display = 'flex';
+                    loadClients();
+                }
+            };
+
+            window.downloadTemplate = function (type) {
+                let csvContent = "";
+                let filename = "";
+                if (type === 'products') {
+                    csvContent = "\uFEFFModel,Price,Category,Description\nARNU07GTRA4,500,Multi-V,Example Unit\nPREMTB100,150,Accessories,Wired Remote";
+                    filename = "Template_Products.csv";
+                } else {
+                    csvContent = "\uFEFFCompany,Category,Discount\nCosmoplas,Multi-V,45\nIngenieria Climaproyectos,Single,30";
+                    filename = "Template_Discounts.csv";
+                }
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute('download', filename);
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 100);
+            };
+
+            window.loadProducts = async function () {
+                console.log("Loading Products...");
+                const tbody = document.querySelector('#productsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading products from DB...</td></tr>';
+
+                try {
+                    const { data, error } = await client.from('products').select('*');
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No products in database. Please upload list.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(p => {
+                        const price = p.list_price !== undefined ? p.list_price : 0;
+                        return `<tr>
+                            <td>${p.model_suffix || '-'}</td>
+                            <td>$${(parseFloat(price) || 0).toLocaleString()}</td>
+                            <td>${p.category || '-'}</td>
+                            <td><button class="btn-secondary-sm">Edit</button></td>
+                        </tr>`;
+                    }).join('');
+                } catch (err) {
+                    console.error("Load Products Error:", err);
+                    tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error: ${err.message}</td></tr>`;
+                }
+            };
+
+            window.handleListUpload = async function (input) {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                    if (jsonData.length === 0) { alert("Empty file"); return; }
+
+                    const upsertData = jsonData.map(row => ({
+                        model_suffix: row['Model'] || row['model_suffix'] || row['Product'] || row['Code'] || 'UNKNOWN',
+                        list_price: parseFloat(row['Price'] || row['list_price'] || row['List Price'] || 0),
+                        category: row['Category'] || row['category'] || 'General',
+                        description: row['Description'] || row['description'] || '',
+                        model_short: (row['Model'] || row['Code'] || '').split('.')[0]
+                    }));
+
+                    const { error } = await client.from('products').upsert(upsertData, { onConflict: 'model_suffix' });
+                    if (error) alert("Error: " + error.message);
+                    else { alert(`Uploaded ${upsertData.length} products.`); loadProducts(); }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+
+            window.loadClients = async function () {
+                const sel = document.getElementById('clientSelect');
+                sel.innerHTML = '<option value="">Loading...</option>';
+                const { data } = await client.from('companies').select('id, name').order('name');
+                sel.innerHTML = '<option value="">Select Client...</option>';
+                if (data) data.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    sel.appendChild(opt);
+                });
+            };
+
+            window.loadDiscounts = async function (clientId) {
+                const tbody = document.querySelector('#discountsTable tbody');
+                if (!clientId) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Select a client.</td></tr>'; return; }
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading discounts...</td></tr>';
+                const { data, error } = await client.from('distributor_discounts').select('*').eq('distributor_id', clientId);
+                if (error) { tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Error: ${error.message}</td></tr>`; return; }
+                if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No discounts found.</td></tr>'; return; }
+                const clientName = document.getElementById('clientSelect').options[document.getElementById('clientSelect').selectedIndex].text;
+                tbody.innerHTML = data.map(d => `<tr><td>${clientName}</td><td>${d.category || 'All'}</td><td>${d.discount_percent}%</td><td><button class="btn-secondary-sm">Edit</button></td></tr>`).join('');
+            };
+
+            window.handleDiscountUpload = async function (input) {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                    const { data: companies } = await client.from('companies').select('id, name');
+                    const companyMap = {};
+                    if (companies) companies.forEach(c => companyMap[c.name.trim().toLowerCase()] = c.id);
+
+                    const upsertData = [];
+                    for (let row of jsonData) {
+                        const cName = (row['Company'] || row['distributor'] || row['Client'] || '').trim().toLowerCase();
+                        const distId = companyMap[cName];
+                        if (distId) upsertData.push({
+                            distributor_id: distId,
+                            category: row['Category'] || row['category'],
+                            discount_percent: parseFloat(row['Discount'] || row['discount_percent'] || row['Percentage'] || 0)
+                        });
+                    }
+                    if (upsertData.length === 0) { alert("No valid companies matched."); return; }
+                    const { error } = await client.from('distributor_discounts').upsert(upsertData, { onConflict: 'distributor_id, category' });
+                    if (error) alert("Error: " + error.message);
+                    else { alert(`Uploaded ${upsertData.length} rules.`); if (document.getElementById('clientSelect').value) loadDiscounts(document.getElementById('clientSelect').value); }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+
+            // --- EXECUTE AUTH CHECK ---
+            try {
+                // Try getting session first
+                const { data: { session }, error: sessionError } = await client.auth.getSession();
+                if (sessionError) throw sessionError;
+
+                let currentUser = null;
+                if (!session) {
+                    console.warn("No session found, redirecting.");
+                    // Check if we can recover via getUser (sometimes useful)
+                    const { data: { user } } = await client.auth.getUser();
+                    if (user) {
+                        currentUser = user;
+                    } else {
+                        console.warn("No session, redirecting");
+                        window.location.href = 'CRM/index.html';
+                        return;
+                    }
+                } else {
+                    currentUser = session.user;
+                }
+
+                console.log("User verified:", currentUser.email);
+                loadProducts(); // defined above
+
+            } catch (authErr) {
+                console.error("Auth check failed:", authErr);
+                alert("Authentication Error: " + authErr.message);
+            }
+        });
+    </script>
+</body>
+
+</html>

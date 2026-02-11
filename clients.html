@@ -6,12 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LG Electronics | Gestión de Clientes</title>
     <!-- Fonts matching index.html -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
         rel="stylesheet">
 
     <!-- Link to Main CSS (Same as index.html) -->
-    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="style.css?v=2024">
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -232,7 +234,7 @@
                         class="brand-logo">
                     <div class="brand-text">
                         <span class="brand-name">LG Electronics</span>
-                        <span class="brand-tagline">Eco Solution - Chile&Bolivia</span>
+                        <span class="brand-tagline">Eco Solutions</span>
                     </div>
                 </div>
             </div>
@@ -240,16 +242,19 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
-                    <li><a href="#"><span class="icon">💼</span> Oportunidades</a></li>
-                    <li><a href="#"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span>
+                            Aprobaciones</a></li>
                     <li><a href="clients.html" class="active"><span class="icon">👥</span> Clientes</a></li>
-                    <li><a href="#"><span class="icon">🕒</span> Reportes</a></li>
+                    <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
                 <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
-                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear()"><span
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
                         class="icon">↪️</span> Cerrar Sesión</a>
             </div>
         </aside>
@@ -272,7 +277,7 @@
                             <th>Empresa</th>
                             <th>RUT</th>
                             <th>Contacto</th>
-                            <th>Tipo</th>
+                            <th>Roles</th>
                             <th>Dirección</th>
                         </tr>
                     </thead>
@@ -310,14 +315,18 @@
                     <input type="text" id="contactPhone" placeholder="+56 9...">
                 </div>
                 <div class="form-group">
-                    <label>Tipo de Cliente</label>
-                    <input type="hidden" id="distributorIdField" value="">
-                    <select id="clientType" required>
-                        <option value="Spec In">Spec In</option>
-                        <option value="End User">End User (Usuario Final)</option>
-                        <option value="Installer">Installer (Instalador)</option>
-                        <option value="Distributor">Distributor (Distribuidor)</option>
-                    </select>
+                    <label>Roles (Seleccione al menos uno)</label>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                        <label style="display:inline-flex; align-items:center; gap:5px; font-weight:normal;">
+                            <input type="checkbox" id="chkInstaller" style="width:auto;"> Instalador
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:5px; font-weight:normal;">
+                            <input type="checkbox" id="chkConsultant" style="width:auto;"> Consultor / Especificador
+                        </label>
+                        <label style="display:inline-flex; align-items:center; gap:5px; font-weight:normal;">
+                            <input type="checkbox" id="chkEndUser" style="width:auto;"> Cliente Final
+                        </label>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Dirección</label>
@@ -390,7 +399,7 @@
             async function init() {
                 const session = sessionStorage.getItem('isLoggedIn');
                 if (!session) {
-                    window.location.href = 'index.html';
+                    window.location.href = 'CRM/index.html';
                     return;
                 }
 
@@ -401,8 +410,13 @@
                     console.error("Auth Error:", authError);
                     // If supabase session is missing but UI thinks logged in, force logout
                     sessionStorage.removeItem('isLoggedIn');
-                    window.location.href = 'index.html';
+                    window.location.href = 'CRM/index.html';
                     return;
+                }
+
+                if (true) {
+                    const nav = document.getElementById('nav-approvals');
+                    if (nav) nav.style.display = 'block';
                 }
 
                 await loadClients(user);
@@ -410,12 +424,50 @@
 
             async function loadClients(user) {
                 try {
-                    // Try to fetch clients - assumes 'clients' table exists
-                    const { data: clients, error } = await supabase
+                    // 1. Get Profile & Distributor
+                    let { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+                    let isAdmin = false;
+                    let myDistributorId = null;
+
+                    // Hardcoded Super Admin
+                    if (user.email === 'admin@lge.com') {
+                        isAdmin = true;
+                        myDistributorId = null;
+                    } else if (profile) {
+                        isAdmin = (profile.role === 'admin');
+                        myDistributorId = profile.distributor_id;
+                    }
+
+                    if (isAdmin) {
+                        const navPrices = document.getElementById('nav-prices');
+                        if (navPrices) navPrices.style.display = 'block';
+                    }
+
+                    // Update UI Badge (Reusing logic for consistency)
+                    const badge = document.querySelector('.user-badge'); // Reuse or add if missing
+                    if (badge) {
+                        if (isAdmin) badge.textContent = "ADMIN";
+                        else if (myDistributorId) {
+                            const { data: c } = await supabase.from('companies').select('name').eq('id', myDistributorId).single();
+                            if (c) badge.textContent = c.name;
+                        }
+                    }
+
+                    // 2. Query Clients with Filter
+                    let query = supabase
                         .from('clients')
                         .select('*')
                         .order('created_at', { ascending: false });
 
+                    if (!isAdmin && myDistributorId) {
+                        query = query.eq('distributor_id', myDistributorId);
+                    } else if (!isAdmin && !myDistributorId) {
+                        // Safety: If no distributor, show nothing
+                        throw new Error("Usuario sin distribuidor asignado.");
+                    }
+
+                    const { data: clients, error } = await query;
                     if (error) throw error;
 
                     renderTable(clients);
@@ -424,9 +476,9 @@
                     console.error('Error fetching clients:', err);
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="5" style="color:var(--danger); text-align:center; padding: 2rem;">
+                            <td colspan="5" style="color:#A50034; text-align:center; padding: 2rem;">
                                 <div>Error al cargar datos</div>
-                                <div style="font-size:0.85em; color:#666;">${err.message}</div>
+                                <div style="font-size:0.85em;">${err.message}</div>
                             </td>
                         </tr>`;
                 }
@@ -448,10 +500,11 @@
                 }
 
                 clients.forEach(client => {
-                    let badgeClass = 'badge-dist';
-                    if (client.client_type === 'Spec In') badgeClass = 'badge-spec';
-                    if (client.client_type === 'End User') badgeClass = 'badge-end';
-                    if (client.client_type === 'Installer') badgeClass = 'badge-inst';
+                    let badges = '';
+                    if (client.is_consultant) badges += `<span class="badge badge-spec">Consultor</span> `;
+                    if (client.is_installer) badges += `<span class="badge badge-inst">Instalador</span> `;
+                    if (client.is_end_user) badges += `<span class="badge badge-end">Final</span> `;
+                    if (!badges && client.client_type) badges = `<span class="badge badge-dist">${client.client_type}</span>`; // Legacy fallback
 
                     const row = `
                         <tr>
@@ -461,7 +514,7 @@
                                 <div style="font-weight:500;">${client.contact_name || '-'}</div>
                                 <div style="font-size:0.8em; color:var(--text-secondary);">${client.contact_phone || ''}</div>
                             </td>
-                            <td><span class="badge ${badgeClass}">${client.client_type}</span></td>
+                            <td>${badges}</td>
                             <td style="font-size:0.9em; color:#495057;">${client.address || '-'}</td>
                         </tr>
                     `;
@@ -497,7 +550,11 @@
                         company_rut: document.getElementById('companyRut').value,
                         contact_name: document.getElementById('contactName').value,
                         contact_phone: document.getElementById('contactPhone').value,
-                        client_type: document.getElementById('clientType').value,
+                        contact_phone: document.getElementById('contactPhone').value,
+                        // client_type: document.getElementById('clientType').value, // Deprecated logic
+                        is_installer: document.getElementById('chkInstaller').checked,
+                        is_consultant: document.getElementById('chkConsultant').checked,
+                        is_end_user: document.getElementById('chkEndUser').checked,
                         address: document.getElementById('address').value,
                         distributor_id: profile.distributor_id // CRITICAL: The security key
                     };

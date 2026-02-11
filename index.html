@@ -14,7 +14,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2024">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -40,8 +40,28 @@
         </div>
     </section>
 
+    <!-- Loading Screen -->
+    <div id="auth-loading"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <div class="spinner"
+            style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #A50034; border-radius: 50%; animation: spin 1s linear infinite;">
+        </div>
+        <p style="margin-top: 20px; font-family: 'Inter', sans-serif; color: #333;">Verificando sesión...</p>
+        <style>
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </div>
+
     <!-- Main Dashboard -->
-    <div id="dashboard" class="dashboard">
+    <div id="dashboard" class="dashboard" style="display: none;">
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -50,7 +70,7 @@
                         class="brand-logo">
                     <div class="brand-text">
                         <span class="brand-name">LG Electronics</span>
-                        <span class="brand-tagline">Business Solutions</span>
+                        <span class="brand-tagline">Eco Solutions</span>
                     </div>
                 </div>
             </div>
@@ -58,10 +78,13 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="#" class="active"><span class="icon">⊞</span> Dashboard</a></li>
-                    <li><a href="#"><span class="icon">💼</span> Oportunidades</a></li>
                     <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span>
+                            Aprobaciones</a></li>
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
-                    <li><a href="#"><span class="icon">🕒</span> Reportes</a></li>
+                    <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
 
@@ -100,74 +123,289 @@
 
             <!-- KPI Cards -->
             <div class="kpi-grid">
+                <!-- Row 1: The "Now" & "Money" -->
+
+                <!-- 1. Award (This month) (Left) -->
                 <div class="kpi-card">
                     <div class="kpi-top">
-                        <span class="kpi-label">Total Sales</span>
-                        <div class="kpi-icon-box green">💲</div>
+                        <span class="kpi-label">Award This Month</span>
+                        <div class="kpi-icon-box blue">🏆</div>
                     </div>
-                    <div class="kpi-main-value">$0</div>
+                    <div class="kpi-main-value" id="kpi-awards-month">$0</div>
+                    <div class="kpi-sub-stats">
+                        <small id="kpi-awd-breakdown" style="color:#666; font-size:0.8rem;">Cargando...</small>
+                    </div>
+                </div>
+
+                <!-- 2. Sales (This month) (Center) -->
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Sales This Month</span>
+                        <div class="kpi-icon-box blue">🚚</div>
+                    </div>
+                    <div class="kpi-main-value" id="kpi-deliveries-month">$0</div>
+                    <div class="kpi-sub-stats">
+                        <small id="kpi-del-breakdown" style="color:#666; font-size:0.8rem;">Cargando...</small>
+                    </div>
+                </div>
+
+                <!-- 3. Active Pipeline (Right) -->
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Active Pipeline</span>
+                        <div class="kpi-icon-box green">💰</div>
+                    </div>
+                    <div class="kpi-main-value" id="kpi-active-pipeline">$0</div>
                     <div class="kpi-trend positive">
-                        <span>+12.5%</span> <span class="trend-text">vs el mes pasado</span>
+                        <span class="trend-text">Total Oportunidades Vivas</span>
+                    </div>
+                </div>
+
+                <!-- Row 2: Strategy & Quality -->
+                <!-- Row 2: Strategy & Quality -->
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <div style="display:flex; flex-direction:column;">
+                            <span class="kpi-label">Strategic Product</span>
+                            <select id="strategicProductFilter" onchange="loadStrategicProductData(this.value)"
+                                style="border:none; background:transparent; font-size:0.75rem; color:#666; cursor:pointer; margin-top:-2px; padding:0;">
+                                <option value="this_month" selected>This Month</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="this_quarter">This Quarter</option>
+                                <option value="this_year">This Year</option>
+                                <option value="next_year">Next Year</option>
+                                <option value="last_year">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="kpi-icon-box red">⚡</div>
+                    </div>
+                    <div style="display:flex; gap:15px; font-size:0.85rem;">
+                        <!-- Left: Awards -->
+                        <div style="flex:1;">
+                            <div
+                                style="font-weight:700; color:#333; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:2px;">
+                                Awards</div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                                <span style="color:#666;">Spec:</span>
+                                <div>
+                                    <span id="mix-award-spec-val" style="font-weight:600;">$0</span>
+                                    <span id="mix-award-spec-rate" style="color:#A50034; font-size:0.75rem;">(0%)</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:#666;">Retro:</span>
+                                <div>
+                                    <span id="mix-award-retro-val" style="font-weight:600;">$0</span>
+                                    <span id="mix-award-retro-rate"
+                                        style="color:#845ef7; font-size:0.75rem;">(0%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div style="width:1px; background:#eee;"></div>
+
+                        <!-- Right: Sales -->
+                        <div style="flex:1;">
+                            <div
+                                style="font-weight:700; color:#333; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:2px;">
+                                Sales</div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                                <span style="color:#666;">Spec:</span>
+                                <div>
+                                    <span id="mix-sales-spec-val" style="font-weight:600;">$0</span>
+                                    <span id="mix-sales-spec-rate" style="color:#A50034; font-size:0.75rem;">(0%)</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:#666;">Retro:</span>
+                                <div>
+                                    <span id="mix-sales-retro-val" style="font-weight:600;">$0</span>
+                                    <span id="mix-sales-retro-rate"
+                                        style="color:#845ef7; font-size:0.75rem;">(0%)</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="kpi-card">
                     <div class="kpi-top">
-                        <span class="kpi-label">Active Deals</span>
-                        <div class="kpi-icon-box blue">📊</div>
+                        <span class="kpi-label">Deals Qty</span>
+                        <div class="kpi-icon-box purple">📊</div>
                     </div>
-                    <div class="kpi-main-value">0</div>
-                    <div class="kpi-trend positive">
-                        <span>+5.2%</span> <span class="trend-text">vs el mes pasado</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <span class="kpi-label">Total Customers</span>
-                        <div class="kpi-icon-box purple">👥</div>
-                    </div>
-                    <div class="kpi-main-value">0</div>
-                    <div class="kpi-trend positive">
-                        <span>+2.4%</span> <span class="trend-text">vs el mes pasado</span>
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <div class="kpi-top">
-                        <span class="kpi-label">Pending Quotes</span>
-                        <div class="kpi-icon-box red">📄</div>
-                    </div>
-                    <div class="kpi-main-value">3</div>
+                    <div class="kpi-main-value" id="kpi-active-deals">0</div>
                     <div class="kpi-trend neutral">
-                        <span>Same</span> <span class="trend-text">vs el mes pasado</span>
+                        <span class="trend-text">Active Deals</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-top">
+                        <span class="kpi-label">Avg. Ticket Size</span>
+                        <div class="kpi-icon-box blue">🏷️</div>
+                    </div>
+                    <div class="kpi-main-value" id="kpi-avg-ticket">$0</div>
+                    <div class="kpi-trend neutral">
+                        <span class="trend-text">Promedio Oportunidad</span>
                     </div>
                 </div>
             </div>
 
             <!-- Charts Section -->
             <div class="charts-section">
-                <div class="chart-card large">
-                    <div class="card-header">
-                        <h3>Revenue Overview</h3>
-                        <select id="yearFilter" class="time-filter-select">
-                            <option value="2026" selected>2026</option>
-                            <option value="2025">2025</option>
-                        </select>
+                <!-- COMBINED LEFT: AWARDS -->
+                <div class="chart-card large"
+                    style="height: auto; min-height: 600px; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Chart -->
+                    <div>
+                        <div class="card-header">
+                            <h3>Expected Awards</h3>
+                            <div style="display:flex; gap:10px;">
+                                <select id="awardYearFilter" class="time-filter-select">
+                                    <option value="2026" selected>2026</option>
+                                    <option value="2025">2025</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="awardChart"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-wrapper">
-                        <canvas id="revenueChart"></canvas>
+
+                    <!-- Divider -->
+                    <div style="height: 1px; background-color: #e9ecef; width: 100%;"></div>
+
+                    <!-- List -->
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <div class="card-header">
+                            <h3>Detail by Month</h3>
+                            <span style="font-size: 0.8rem; color: #666;">Próximos 3 meses</span>
+                        </div>
+                        <div class="list-container" id="awardList" style="min-height: 300px;">
+                            <div class="empty-state">Cargando...</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="chart-card medium">
-                    <div class="card-header">
-                        <h3>Recent Activity</h3>
+                <!-- RIGHT COLUMN: SALES -->
+                <div class="chart-card large"
+                    style="height: auto; min-height: 600px; display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Chart -->
+                    <div>
+                        <div class="card-header">
+                            <h3>Expected Sales</h3>
+                            <select id="yearFilter" class="time-filter-select">
+                                <option value="2026" selected>2026</option>
+                                <option value="2025">2025</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper" style="height: 300px;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
                     </div>
-                    <div class="empty-state">
-                        <!-- Content for recent activity -->
+
+                    <!-- Divider -->
+                    <div style="height: 1px; background-color: #e9ecef; width: 100%;"></div>
+
+                    <!-- List -->
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <div class="card-header">
+                            <h3>Detail by Month</h3>
+                            <span style="font-size: 0.8rem; color: #666;">Próximos 3 meses</span>
+                        </div>
+                        <div class="list-container" id="deliveryList" style="min-height: 300px;">
+                            <div class="empty-state">Cargando...</div>
+                        </div>
                     </div>
                 </div>
+
+
+
+            </div>
+
+            <!-- Pipeline Detail Section (Bottom) -->
+            <!-- Pipeline Detail Section (Bottom) -->
+            <div class="charts-section" style="margin-top: 20px;">
+
+                <!-- LEFT: Pipeline Detail (Awards) -->
+                <div class="chart-card large">
+                    <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Pipeline Detail: Awards</h3>
+                        <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                            <!-- Year Filter -->
+                            <select id="awardDetailYearFilter" class="time-filter-select"
+                                onchange="updateAwardDetailYear(this.value)">
+                                <option value="2026" selected>2026</option>
+                                <option value="2025">2025</option>
+                            </select>
+                            <!-- View Mode Toggles -->
+                            <div class="view-toggles">
+                                <button class="toggle-btn active"
+                                    onclick="updateAwardDetailView('month', this)">Mes</button>
+                                <button class="toggle-btn" onclick="updateAwardDetailView('quarter', this)">Q</button>
+                                <button class="toggle-btn" onclick="updateAwardDetailView('year', this)">Año</button>
+                            </div>
+                            <!-- Series Visibility Checkboxes -->
+                            <div
+                                style="display:flex; gap:10px; align-items:center; margin-left:5px; font-size:0.85rem;">
+                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                                    <input type="checkbox" id="checkSpecInAward" checked
+                                        onchange="toggleAwardDetailSeries()">
+                                    <span style="color:#A50034; font-weight:600;">Spec In</span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                                    <input type="checkbox" id="checkRetrofitAward" checked
+                                        onchange="toggleAwardDetailSeries()">
+                                    <span style="color:#845ef7; font-weight:600;">Retrofit</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="awardDetailChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Pipeline Detail (Sales) -->
+                <div class="chart-card large">
+                    <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+                        <h3>Pipeline Detail: Sales</h3>
+                        <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+                            <!-- Year Filter -->
+                            <select id="salesDetailYearFilter" class="time-filter-select"
+                                onchange="updateSalesDetailYear(this.value)">
+                                <option value="2026" selected>2026</option>
+                                <option value="2025">2025</option>
+                            </select>
+                            <!-- View Mode Toggles -->
+                            <div class="view-toggles">
+                                <button class="toggle-btn active"
+                                    onclick="updateSalesDetailView('month', this)">Mes</button>
+                                <button class="toggle-btn" onclick="updateSalesDetailView('quarter', this)">Q</button>
+                                <button class="toggle-btn" onclick="updateSalesDetailView('year', this)">Año</button>
+                            </div>
+                            <!-- Series Visibility Checkboxes -->
+                            <div
+                                style="display:flex; gap:10px; align-items:center; margin-left:5px; font-size:0.85rem;">
+                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                                    <input type="checkbox" id="checkSpecInSales" checked
+                                        onchange="toggleSalesDetailSeries()">
+                                    <span style="color:#A50034; font-weight:600;">Spec In</span>
+                                </label>
+                                <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                                    <input type="checkbox" id="checkRetrofitSales" checked
+                                        onchange="toggleSalesDetailSeries()">
+                                    <span style="color:#845ef7; font-weight:600;">Retrofit</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="salesDetailChart"></canvas>
+                    </div>
+                </div>
+
             </div>
 
         </main>
@@ -190,7 +428,7 @@
 
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=2025_fix_kpi_v3"></script>
 </body>
 
 </html>
