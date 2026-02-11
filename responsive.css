@@ -249,6 +249,64 @@
     .checkbox-card {
         width: 100%;
     }
+
+    /* --- Form Layout Fixes (Nueva Cotización) --- */
+
+    /* Top Row Inputs (Code, Project, Stage, Date) */
+    .quote-header-inputs {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+        grid-template-columns: 1fr !important;
+        /* Override grid if present */
+    }
+
+    /* Secondary Row Inputs (Client, Consultant, Checkboxes) */
+    .quote-secondary-row {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 20px !important;
+    }
+
+    /* Ensure columns inside secondary row take full width */
+    .attribute-column {
+        width: 100% !important;
+    }
+
+    /* Input Groups inside */
+    .input-group {
+        width: 100% !important;
+        margin-bottom: 15px;
+        /* Consistent spacing */
+    }
+
+    /* Checkbox Groups specific */
+    .attribute-group {
+        width: 100% !important;
+        margin-bottom: 10px;
+        padding: 12px 15px !important;
+        /* Larger touch area */
+    }
+
+    /* Labels readability */
+    .input-group label {
+        font-size: 0.9rem !important;
+        margin-bottom: 5px !important;
+        display: block;
+    }
+
+    /* Hide Spacer Labels on Mobile */
+    .attribute-column>label[style*="opacity:0"] {
+        display: none !important;
+    }
+
+    /* Selects and Inputs Height */
+    .quote-header input,
+    .quote-header select {
+        height: 50px !important;
+        /* Easy to tap */
+        font-size: 1rem !important;
+    }
 }
 
 /* --- Small Mobile Fixes (Max Width 480px) --- */
