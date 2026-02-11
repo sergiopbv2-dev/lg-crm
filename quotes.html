@@ -939,7 +939,7 @@
             // Logic: Clients list should show Installers OR End Users.
             // Consultants (who are ONLY consultants) should be excluded.
             // Supabase 'or' query formatting: "is_installer.eq.true,is_end_user.eq.true"
-            let q = db.from('clients').select('id, company_name')
+            let q = db.from('clients').select('id, company_name, distributor_id') // Added distributor_id
                 .or('is_installer.eq.true,is_end_user.eq.true');
 
             if (!isAdmin) q = q.eq('distributor_id', myDistributorId);
@@ -960,6 +960,8 @@
                     let o = document.createElement('option');
                     o.value = x.id;
                     o.textContent = x.company_name;
+                    // Store distributor info for Admins who don't have their own distributor_id
+                    if (x.distributor_id) o.dataset.distributorId = x.distributor_id;
                     s.appendChild(o)
                 });
             }
