@@ -58,13 +58,14 @@
         overflow-x: hidden;
     }
 
-    /* Sidebar Transformation - REVISED v3 */
+    /* Sidebar Transformation - REVISED v4 */
     .sidebar {
         position: fixed !important;
         top: 0;
         left: 0;
-        /* Base position */
+        /* Use dvh to account for mobile URL bars, fallback to 100vh */
         height: 100vh;
+        height: 100dvh;
         width: 250px;
         background-color: #ffffff !important;
         z-index: 2005 !important;
@@ -75,6 +76,10 @@
         box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
         display: flex;
         flex-direction: column;
+        /* Ensure content is scrollable if screen is short */
+        overflow-y: auto;
+        /* Add padding at bottom to avoid Safari/Chrome bottom bar overlap */
+        padding-bottom: 80px;
     }
 
     /* Active State */
@@ -135,6 +140,115 @@
         padding: 15px;
         padding-top: 10px;
     }
+
+    /* --- Quotes & Tables Mobile Optimization --- */
+
+    /* Stack Form Inputs */
+    .form-row,
+    .filters-container {
+        flex-direction: column !important;
+        gap: 15px;
+    }
+
+    .form-group {
+        width: 100% !important;
+        min-width: 100% !important;
+        margin-right: 0 !important;
+    }
+
+    /* Adjust Input Heights for fingers */
+    input,
+    select,
+    .btn-primary,
+    .btn-secondary {
+        min-height: 44px;
+        /* Touch target size */
+    }
+
+    /* --- Mobile Table (Card View) Strategy --- */
+    /* Hide standard table headers on mobile */
+    .quotes-table thead,
+    .clients-table-container thead {
+        display: none;
+    }
+
+    .quotes-table,
+    .clients-table-container table {
+        display: block;
+        width: 100%;
+    }
+
+    .quotes-table tbody,
+    .clients-table-container tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .quotes-table tr,
+    .clients-table-container tr {
+        display: block;
+        background: #fff;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 15px;
+        border: 1px solid #eee;
+    }
+
+    .quotes-table td,
+    .clients-table-container td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: right;
+        /* Content on right */
+        font-size: 0.9rem;
+    }
+
+    .quotes-table td:last-child {
+        border-bottom: none;
+        justify-content: flex-end;
+        /* Actions */
+        padding-top: 15px;
+    }
+
+    /* Add Labels via attr (requires HTML update, but useful fallback) */
+    /* Or simply align left if we don't have labels readily available via CSS attr() yet. */
+    /* For now, let's keep it simple: Left align content for readability if no labels */
+    .quotes-table td {
+        text-align: left;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    /* Special fix for New Quote Header */
+    .header-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .search-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-input-wrapper {
+        width: 100%;
+    }
+
+    /* Checkbox Groups in New Quote Form */
+    .checkbox-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .checkbox-card {
+        width: 100%;
+    }
 }
 
 /* --- Small Mobile Fixes (Max Width 480px) --- */
@@ -145,9 +259,30 @@
         font-size: 1.25rem !important;
     }
 
+    /* Show Profile Avatar but hide Name/Role to save space */
     .user-profile,
     .user-profile-top {
-        display: none;
-        /* Hide profile on very small screens to prioritize content */
+        display: flex !important;
+        /* Force show */
+        gap: 5px;
+    }
+
+    .user-details,
+    .user-info {
+        display: none !important;
+        /* Hide text details */
+    }
+
+    .avatar-circle,
+    .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+
+    /* Ensure sidebar footer links have large touch targets */
+    .sidebar-footer .footer-link {
+        padding: 15px;
+        font-size: 1rem !important;
     }
 }
