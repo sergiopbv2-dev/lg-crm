@@ -144,6 +144,7 @@
                                     <th>Model Code</th>
                                     <th>List Price (USD)</th>
                                     <th>Category</th>
+                                    <th style="text-align:center;">Status (Active)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -380,16 +381,77 @@
 
                     tbody.innerHTML = data.map(p => {
                         const price = p.list_price !== undefined ? p.list_price : 0;
-                        return `<tr class="product-row">
+                        const isActive = p.is_active !== false; // handle nulls as true by default
+                        return `<tr class="product-row" style="${!isActive ? 'opacity:0.5; background:#f8f9fa;' : ''}">
                             <td class="product-model-col" style="font-weight:bold;">${p.model_suffix || '-'}</td>
                             <td>$${(parseFloat(price) || 0).toLocaleString()}</td>
                             <td class="product-cat-col">${p.category || '-'}</td>
-                            <td><button class="btn-secondary-sm">Edit</button></td>
+                            <td style="text-align:center;">
+                                <input type="checkbox" onchange="window.toggleProductActive('${p.model_suffix}', this.checked)" ${isActive ? 'checked' : ''} style="width:20px;height:20px; accent-color:#A50034; cursor:pointer;" title="Desmarcar ocultará este producto en el cotizador">
+                            </td>
+                            <td><button class="btn-secondary-sm" onclick="window.editProductPrice('${p.model_suffix}', ${price})">Edit</button></td>
                         </tr>`;
                     }).join('');
                 } catch (err) {
                     console.error("Load Products Error:", err);
                     tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error: ${err.message}</td></tr>`;
+                }
+            };
+
+            window.editProductPrice = async function (modelSuffix, currentPrice) {
+                const result = prompt(`Ingresa el nuevo precio (List Price) en USD para el modelo ${modelSuffix}:`, currentPrice);
+                if (result === null || result.trim() === "") return;
+
+                // Replace comma with dot just in case the user types European decimals
+                const normalizedResult = result.replace(',', '.');
+                const newPrice = parseFloat(normalizedResult);
+
+                if (isNaN(newPrice) || newPrice < 0) {
+                    alert("Precio inválido. Por favor, ingresa un número válido positivo.");
+                    return;
+                }
+
+                try {
+                    // Feedback visual o loading (opcional si es rápido)
+                    const { error } = await client.from('products').update({ list_price: newPrice }).eq('model_suffix', modelSuffix);
+                    if (error) throw error;
+
+                    // Reload table to reflect changes
+                    window.loadProducts();
+                } catch (e) {
+                    console.error("Error updating price:", e);
+                    alert("Error al actualizar precio: " + e.message);
+                }
+            };
+
+            window.toggleProductActive = async function (modelSuffix, isActive) {
+                try {
+                    const { error } = await client.from('products').update({ is_active: isActive }).eq('model_suffix', modelSuffix);
+                    if (error) {
+                        // Handle column missing if DB not updated yet
+                        if (error.code === '42703' || error.message.includes('column "is_active" of relation "products" does not exist')) {
+                            alert("⚠️ Error Base de Datos: La columna 'is_active' aún no existe. Por favor, ejecuta el script UPDATE_PRODUCTS_ACTIVE.sql en Supabase.");
+                            await window.loadProducts(); // revert UI change
+                        } else {
+                            throw error;
+                        }
+                    } else {
+                        // Change row opacity for visual feedback
+                        const row = event.target.closest('tr');
+                        if (row) {
+                            if (isActive) {
+                                row.style.opacity = '1';
+                                row.style.background = 'transparent';
+                            } else {
+                                row.style.opacity = '0.5';
+                                row.style.background = '#f8f9fa';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error toggling active state:", e);
+                    alert("Error al cambiar estado: " + e.message);
+                    await window.loadProducts(); // revert on error
                 }
             };
 
