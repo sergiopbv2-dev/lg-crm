@@ -128,6 +128,7 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html" class="active"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
@@ -223,7 +224,7 @@
             const { data: profile } = await db.from('profiles').select('role, distributor_id').eq('id', user.id).single();
 
             // Hardcoded Super Admin
-            if (user.email === 'admin@lge.com') {
+            if (user.email === 'sergio.baezv@usach.cl') {
                 isAdmin = true;
                 myDistributorId = null;
                 document.getElementById('distributorName').textContent = "ADMINISTRADOR (GLOBAL)";
@@ -272,6 +273,7 @@
                     is_retrofit,
                     specified_brands,
                     consultant_id,
+                    vertical_market,
                     clients!client_id (company_name, company_rut)
                 `).order('created_at', { ascending: false });
 
@@ -375,6 +377,7 @@
                             "Cliente": q.clients?.company_name || 'N/A',
                             "RUT Cliente": q.clients?.company_rut || 'N/A',
                             "Consultor": consultantName,
+                            "Mercado Vertical": q.vertical_market || '',
                             "Spec In (LG)": isSpec,
                             "Retrofit": isRetro,
                             "Espec. Competencia": specBrands,
@@ -399,6 +402,7 @@
                                 "Cliente": q.clients?.company_name || 'N/A',
                                 "RUT Cliente": q.clients?.company_rut || 'N/A',
                                 "Consultor": consultantName,
+                                "Mercado Vertical": q.vertical_market || '',
                                 "Spec In (LG)": isSpec,
                                 "Retrofit": isRetro,
                                 "Espec. Competencia": specBrands,

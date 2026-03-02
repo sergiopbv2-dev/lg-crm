@@ -87,6 +87,7 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
@@ -287,8 +288,12 @@
                     <!-- List -->
                     <div style="flex: 1; display: flex; flex-direction: column;">
                         <div class="card-header">
-                            <h3>Detail by Month</h3>
-                            <span style="font-size: 0.8rem; color: #666;">Próximos 3 meses</span>
+                            <div style="display:flex; gap:5px;">
+                                <select id="awardListMonth" class="tiny-select"
+                                    onchange="window.loadAwardList()"></select>
+                                <select id="awardListYear" class="tiny-select"
+                                    onchange="window.loadAwardList()"></select>
+                            </div>
                         </div>
                         <div class="list-container" id="awardList" style="min-height: 300px;">
                             <div class="empty-state">Cargando...</div>
@@ -319,8 +324,12 @@
                     <!-- List -->
                     <div style="flex: 1; display: flex; flex-direction: column;">
                         <div class="card-header">
-                            <h3>Detail by Month</h3>
-                            <span style="font-size: 0.8rem; color: #666;">Próximos 3 meses</span>
+                            <div style="display:flex; gap:5px;">
+                                <select id="deliveryListMonth" class="tiny-select"
+                                    onchange="window.loadDeliveryList()"></select>
+                                <select id="deliveryListYear" class="tiny-select"
+                                    onchange="window.loadDeliveryList()"></select>
+                            </div>
                         </div>
                         <div class="list-container" id="deliveryList" style="min-height: 300px;">
                             <div class="empty-state">Cargando...</div>

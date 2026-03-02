@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.user-name').textContent = profile.full_name || 'Usuario';
 
             // Hardcoded Super Admin Check
-            if (user.email === 'admin@lge.com') {
+            if (user.email === 'sergio.baezv@usach.cl') {
                 isAdmin = true;
                 myDistributorId = null;
                 document.querySelector('.user-role').textContent = 'Administrador Global';
@@ -1003,18 +1003,119 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- LISTS LOGIC ---
-    async function loadLists() {
+
+    // Initialize Selectors
+    function populateDateSelectors() {
+        // Years: 2024 to 2027
+        const years = [2024, 2025, 2026, 2027];
+        const months = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+
+        const targets = [
+            { m: 'awardListMonth', y: 'awardListYear' },
+            { m: 'deliveryListMonth', y: 'deliveryListYear' }
+        ];
+
+        targets.forEach(t => {
+            const mSel = document.getElementById(t.m);
+            const ySel = document.getElementById(t.y);
+
+            if (mSel && ySel) {
+                // Populate Months
+                months.forEach((name, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = idx;
+                    opt.textContent = name;
+                    if (idx === currentMonth) opt.selected = true;
+                    mSel.appendChild(opt);
+                });
+
+                // Populate Years
+                years.forEach(yr => {
+                    const opt = document.createElement('option');
+                    opt.value = yr;
+                    opt.textContent = yr;
+                    if (yr === currentYear) opt.selected = true;
+                    ySel.appendChild(opt);
+                });
+            }
+        });
+    }
+
+    // Helper: Highlight Chart Point
+    function updateChartHighlight(type) {
+        let chart, listM, listY, chartY, color;
+        if (type === 'revenue') {
+            chart = revenueChartInstance;
+            listM = 'deliveryListMonth'; listY = 'deliveryListYear'; chartY = 'yearFilter';
+            color = '#A50034';
+        } else {
+            chart = awardChartInstance;
+            listM = 'awardListMonth'; listY = 'awardListYear'; chartY = 'awardYearFilter';
+            color = '#0052cc';
+        }
+
+        if (!chart) return;
+        const mVal = parseInt(document.getElementById(listM)?.value);
+        const yVal = parseInt(document.getElementById(listY)?.value);
+        const cYVal = parseInt(document.getElementById(chartY)?.value);
+
+        if (isNaN(mVal) || isNaN(yVal) || isNaN(cYVal)) return;
+
+        const ds = chart.data.datasets[0];
+        // Reset
+        const baseRad = 4;
+        ds.pointRadius = new Array(12).fill(baseRad);
+        ds.pointBackgroundColor = new Array(12).fill('#ffffff');
+        ds.pointBorderWidth = new Array(12).fill(2);
+
+        // Highlight
+        if (yVal === cYVal) {
+            const arrRad = [...ds.pointRadius];
+            const arrBg = [...ds.pointBackgroundColor];
+            const arrBw = [...ds.pointBorderWidth];
+
+            arrRad[mVal] = 8; // Highlight size
+            arrBg[mVal] = color; // Solid color
+            arrBw[mVal] = 3;
+
+            ds.pointRadius = arrRad;
+            ds.pointBackgroundColor = arrBg;
+            ds.pointBorderWidth = arrBw;
+            ds.pointBorderColor = color; // Keep border color consistent
+        }
+        chart.update();
+    }
+
+    // New Load Function for Sales List
+    window.loadDeliveryList = async () => {
         if (!isAdmin && !myDistributorId) return;
 
-        const today = new Date();
-        const threeMonthsLater = new Date();
-        threeMonthsLater.setMonth(today.getMonth() + 3);
+        const mSel = document.getElementById('deliveryListMonth');
+        const ySel = document.getElementById('deliveryListYear');
+        if (!mSel || !ySel) return;
 
-        const startStr = today.toISOString().split('T')[0];
-        const endStr = threeMonthsLater.toISOString().split('T')[0];
+        const monthIdx = parseInt(mSel.value);
+        const year = parseInt(ySel.value);
 
-        // 1. Load Upcoming Deliveries
-        let dQuery = supabase
+        // Highlight Chart
+        updateChartHighlight('revenue');
+
+        // Calculate Range: strict start and end of selected month
+        const start = new Date(year, monthIdx, 1);
+        const end = new Date(year, monthIdx + 1, 0); // Last day of month
+
+        const startStr = start.toISOString().split('T')[0];
+        const endStr = end.toISOString().split('T')[0];
+
+        // Query
+        let q = supabase
             .from('quote_items')
             .select(`
                 id, total_line_price, delivery_date, 
@@ -1022,15 +1123,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `)
             .gte('delivery_date', startStr)
             .lte('delivery_date', endStr)
-            // Removed .not()
-            .order('delivery_date', { ascending: true })
-            .limit(20); // Limit higher to allow filtering
+            .order('delivery_date', { ascending: true }); // No limit, show all
 
         if (!isAdmin) {
-            dQuery = dQuery.eq('quotes.distributor_id', myDistributorId);
+            q = q.eq('quotes.distributor_id', myDistributorId);
         }
 
-        const { data: rawDItems, error: dErr } = await dQuery;
+        const { data: rawDItems, error: dErr } = await q;
 
         // JS Filter
         const dItems = rawDItems ? rawDItems.filter(x => !['Lost', 'Delete_Pending', 'Lost_Pending'].includes(x.quotes.stage)) : [];
@@ -1041,77 +1140,81 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(dErr);
                 dContainer.innerHTML = '<div class="empty-state">Error cargando datos.</div>';
             } else if (!dItems || dItems.length === 0) {
-                dContainer.innerHTML = '<div class="empty-state">No hay entregas próximas.</div>';
+                dContainer.innerHTML = '<div class="empty-state">Sin entregas para este periodo.</div>';
             } else {
-                // Group By Month
-                const grouped = {};
-                dItems.forEach(item => {
-                    const d = new Date(item.delivery_date);
-                    // Use a sortable key for order, but display name for UI
-                    const key = d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-                    if (!grouped[key]) grouped[key] = { items: [], total: 0 };
-                    grouped[key].items.push(item);
-                    grouped[key].total += parseFloat(item.total_line_price || 0);
-                });
+                // Render Simple List (No grouping needed as it is one month)
+                let total = 0;
+                let html = '<ul class="data-list">';
 
-                let html = '<div class="grouped-list">';
-                Object.keys(grouped).forEach(month => {
-                    const group = grouped[month];
-                    const groupTotal = '$' + group.total.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                dItems.forEach(item => {
+                    total += parseFloat(item.total_line_price || 0);
+                    const date = new Date(item.delivery_date).toLocaleDateString('es-ES', { day: '2-digit' });
+                    const amount = '$' + parseFloat(item.total_line_price).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    const project = item.quotes.project_name || 'Sin Nombre';
+
+                    let distBadge = '';
+                    if (isAdmin && item.quotes.companies) {
+                        distBadge = `<span style="font-size:0.75rem; color:#666; background:#f1f3f5; padding:2px 6px; border-radius:4px; margin-left:8px; display:inline-block;">${item.quotes.companies.name}</span>`;
+                    }
 
                     html += `
-                        <div class="month-group">
-                            <div class="month-header">
-                                <span class="month-name">${month.toUpperCase()}</span>
-                                <span class="month-total">${groupTotal}</span>
+                        <li class="list-item compact">
+                            <div class="list-date-small">${date}</div>
+                            <div class="list-info">
+                                <span class="list-project">${project}${distBadge}</span>
+                                <span class="list-amount">${amount}</span>
                             </div>
-                            <ul class="data-list">
+                        </li>
                     `;
-
-                    group.items.forEach(item => {
-                        const date = new Date(item.delivery_date).toLocaleDateString('es-ES', { day: '2-digit' });
-                        const amount = '$' + parseFloat(item.total_line_price).toLocaleString('en-US', { maximumFractionDigits: 0 });
-                        const project = item.quotes.project_name || 'Sin Nombre';
-
-                        let distBadge = '';
-                        if (isAdmin && item.quotes.companies) {
-                            distBadge = `<span style="font-size:0.75rem; color:#666; background:#f1f3f5; padding:2px 6px; border-radius:4px; margin-left:8px; display:inline-block;">${item.quotes.companies.name}</span>`;
-                        }
-
-                        html += `
-                            <li class="list-item compact">
-                                <div class="list-date-small">${date}</div>
-                                <div class="list-info">
-                                    <span class="list-project">${project}${distBadge}</span>
-                                    <span class="list-amount">${amount}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += '</ul></div>';
                 });
-                html += '</div>';
-                dContainer.innerHTML = html;
+                html += '</ul>';
+
+                // Add Total header
+                const headerHtml = `
+                    <div style="background:#f8f9fa; padding:10px 15px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; font-weight:700;">
+                        <span>Opportunities by month</span>
+                        <span>$${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                    </div>
+                `;
+
+                dContainer.innerHTML = headerHtml + html;
             }
         }
+    };
 
-        // 2. Load Upcoming Awards
-        let aQuery = supabase
+    // New Load Function for Award List
+    window.loadAwardList = async () => {
+        if (!isAdmin && !myDistributorId) return;
+
+        const mSel = document.getElementById('awardListMonth');
+        const ySel = document.getElementById('awardListYear');
+        if (!mSel || !ySel) return;
+
+        const monthIdx = parseInt(mSel.value);
+        const year = parseInt(ySel.value);
+
+        // Highlight Chart
+        updateChartHighlight('award');
+
+        const start = new Date(year, monthIdx, 1);
+        const end = new Date(year, monthIdx + 1, 0);
+
+        const startStr = start.toISOString().split('T')[0];
+        const endStr = end.toISOString().split('T')[0];
+
+        let q = supabase
             .from('quotes')
             .select('id, project_name, total_net_price, award_date, distributor_id, stage, companies(name)')
             .gte('award_date', startStr)
             .lte('award_date', endStr)
-            // Removed .not
-            .order('award_date', { ascending: true })
-            .limit(20);
+            .order('award_date', { ascending: true }); // No limit
 
         if (!isAdmin) {
-            aQuery = aQuery.eq('distributor_id', myDistributorId);
+            q = q.eq('distributor_id', myDistributorId);
         }
 
-        const { data: rawAItems, error: aErr } = await aQuery;
+        const { data: rawAItems, error: aErr } = await q;
 
-        // JS Filter
         const aItems = rawAItems ? rawAItems.filter(x => !['Lost', 'Delete_Pending', 'Lost_Pending'].includes(x.stage)) : [];
 
         const aContainer = document.getElementById('awardList');
@@ -1120,58 +1223,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error(aErr);
                 aContainer.innerHTML = '<div class="empty-state">Error cargando datos.</div>';
             } else if (!aItems || aItems.length === 0) {
-                aContainer.innerHTML = '<div class="empty-state">No hay awards próximos.</div>';
+                aContainer.innerHTML = '<div class="empty-state">Sin awards para este periodo.</div>';
             } else {
-                // Group By Month (Awards)
-                const grouped = {};
-                aItems.forEach(item => {
-                    const d = new Date(item.award_date + 'T00:00:00');
-                    const key = d.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-                    if (!grouped[key]) grouped[key] = { items: [], total: 0 };
-                    grouped[key].items.push(item);
-                    grouped[key].total += parseFloat(item.total_net_price || 0);
-                });
+                let total = 0;
+                let html = '<ul class="data-list">';
 
-                let html = '<div class="grouped-list">';
-                Object.keys(grouped).forEach(month => {
-                    const group = grouped[month];
-                    const groupTotal = '$' + group.total.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                aItems.forEach(item => {
+                    total += parseFloat(item.total_net_price || 0);
+                    // Parsing date correctly to avoid timezone shift
+                    const dateObj = new Date(item.award_date + 'T00:00:00');
+                    const date = dateObj.toLocaleDateString('es-ES', { day: '2-digit' });
+                    const amount = '$' + parseFloat(item.total_net_price).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    const project = item.project_name || 'Sin Nombre';
+
+                    let distBadge = '';
+                    if (isAdmin && item.companies) {
+                        distBadge = `<span style="font-size:0.75rem; color:#004085; background:#e0f2fe; padding:2px 6px; border-radius:4px; margin-left:8px; display:inline-block;">${item.companies.name}</span>`;
+                    }
 
                     html += `
-                        <div class="month-group">
-                            <div class="month-header" style="background:#e7f5ff; border-left: 4px solid #0052cc;">
-                                <span class="month-name" style="color:#004085;">${month.toUpperCase()}</span>
-                                <span class="month-total" style="color:#0052cc;">${groupTotal}</span>
+                        <li class="list-item compact">
+                            <div class="list-date-small" style="background:#e7f5ff; color:#0052cc;">${date}</div>
+                            <div class="list-info">
+                                <span class="list-project">${project}${distBadge}</span>
+                                <span class="list-amount" style="color:#0052cc;">${amount}</span>
                             </div>
-                            <ul class="data-list">
+                        </li>
                     `;
-
-                    group.items.forEach(item => {
-                        const dateObj = new Date(item.award_date + 'T00:00:00');
-                        const date = dateObj.toLocaleDateString('es-ES', { day: '2-digit' });
-                        const amount = '$' + parseFloat(item.total_net_price).toLocaleString('en-US', { maximumFractionDigits: 0 });
-                        const project = item.project_name || 'Sin Nombre';
-
-                        let distBadge = '';
-                        if (isAdmin && item.companies) {
-                            distBadge = `<span style="font-size:0.75rem; color:#004085; background:#e0f2fe; padding:2px 6px; border-radius:4px; margin-left:8px; display:inline-block;">${item.companies.name}</span>`;
-                        }
-
-                        html += `
-                            <li class="list-item compact">
-                                <div class="list-date-small" style="background:#e7f5ff; color:#0052cc;">${date}</div>
-                                <div class="list-info">
-                                    <span class="list-project">${project}${distBadge}</span>
-                                    <span class="list-amount" style="color:#0052cc;">${amount}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += '</ul></div>';
                 });
-                html += '</div>';
-                aContainer.innerHTML = html;
+                html += '</ul>';
+
+                // Add Total header
+                const headerHtml = `
+                 <div style="background:#e7f5ff; padding:10px 15px; border-bottom:1px solid #1c7cd6; display:flex; justify-content:space-between; font-weight:700; color:#0052cc;">
+                     <span>Opportunities by month</span>
+                     <span>$${total.toLocaleString('en-US', { maximumFractionDigits: 0 })}</span>
+                 </div>
+             `;
+
+                aContainer.innerHTML = headerHtml + html;
             }
         }
+    };
+
+    // Init Lists Wrapper
+    function loadLists() {
+        populateDateSelectors();
+        window.loadAwardList();
+        window.loadDeliveryList();
     }
 });

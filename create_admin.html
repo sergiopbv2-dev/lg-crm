@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Admin Sergio</title>
+    <!-- Fallback to unpkg if jsdelivr is slow -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #A50034;
+        }
+
+        button {
+            background: #A50034;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #8a002b;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Activación de Cuenta Admin</h1>
+        <p>Este script creará o verificará la cuenta de <strong>sergio.baez@lge.com</strong>.</p>
+        <p>Contraseña asignada: <strong>lg123456</strong></p>
+
+        <button id="btnActivate">ACTIVAR CUENTA AHORA</button>
+        <div id="status">Cargando librería...</div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const btn = document.getElementById('btnActivate');
+
+        // Global Error Handler
+        window.onerror = function (message, source, lineno, colno, error) {
+            statusDiv.innerHTML = `🛑 <strong>Error Crítico JS:</strong> ${message}<br><small>${source}:${lineno}</small>`;
+            statusDiv.className = "error";
+            console.error(error);
+        };
+
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+
+        let supabase = null;
+
+        // Check continuously if Supabase is loaded
+        const checkInterval = setInterval(() => {
+            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                clearInterval(checkInterval);
+                statusDiv.innerHTML = "✅ Librería cargada. Listo para conectar.";
+                supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            }
+        }, 500);
+
+        // Timeout check
+        setTimeout(() => {
+            if (!supabase) {
+                clearInterval(checkInterval);
+                statusDiv.innerHTML = "⚠️ La librería de Supabase tarda en cargar. <br>Por favor refresca la página o revisa tu conexión.";
+                statusDiv.className = "error";
+            }
+        }, 10000);
+
+        btn.onclick = async function () {
+            if (!supabase) {
+                alert("Espera a que cargue la librería...");
+                return;
+            }
+
+            btn.disabled = true;
+            statusDiv.innerHTML = "🔄 Conectando con Supabase...";
+            statusDiv.className = "";
+            console.log("Iniciando creación de admin...");
+
+            try {
+                // 1. Try to Sign Up (Create User)
+                console.log("Enviando solicitud signUp...");
+                const { data, error } = await supabase.auth.signUp({
+                    email: 'sergio.baez@lge.com',
+                    password: 'lg123456'
+                });
+
+                console.log("Respuesta signUp:", { data, error });
+
+                if (error) {
+                    statusDiv.innerHTML = "❌ Error: " + error.message;
+                    statusDiv.className = "error";
+
+                    if (error.message && error.message.includes("already registered")) {
+                        statusDiv.innerHTML = "⚠️ El usuario ya existe.<br>Intenta iniciar sesión con: <strong>lg123456</strong>.<br><br>Si falla, la contraseña es antigua.";
+                    }
+                } else if (data && data.user) {
+                    // Success creating user
+                    statusDiv.innerHTML = "✅ Usuario Auth OK. Configurando permisos admin...";
+                    statusDiv.className = "success";
+
+                    // 2. We set the Admin Role regardless of whether it was just created or already existed (if data.user is returned)
+                    // Note: SignUp returns user even if created. If it existed but email not confirmed, it might vary.
+
+                    console.log("Actualizando perfil para ID:", data.user.id);
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .update({ role: 'admin' })
+                        .eq('id', data.user.id);
+
+                    if (profileError) {
+                        console.error("Error perfil:", profileError);
+                        statusDiv.innerHTML += "<br>(⚠️ Error en perfil: " + profileError.message + ")";
+                    } else {
+                        console.log("Perfil actualizado correctamente.");
+                        statusDiv.innerHTML = "✅ ¡CUENTA LISTA! Es Administrador.<br><a href='CRM/index.html' style='display:inline-block; margin-top:10px; font-weight:bold; color:#A50034'>IR AL LOGIN &rarr;</a>";
+                    }
+                } else {
+                    // Sometimes supabase returns null data if user exists but unconfirmed?
+                    statusDiv.innerHTML = "⚠️ Respuesta ambigua. Verifica si recibiste un email de confirmación.";
+                }
+            } catch (err) {
+                console.error("Excepción:", err);
+                statusDiv.innerHTML = "🛑 Excepción JS: " + err.message;
+                statusDiv.className = "error";
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+
+</html>

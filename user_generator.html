@@ -76,6 +76,21 @@
                 await linkProfile(u2.user.id, 'Mar del Sur');
             }
 
+            // 3. Crear Admin (Sergio Baez)
+            log("--- Creando Usuario Admin (Sergio Baez) ---");
+            const { data: u3, error: e3 } = await supabase.auth.signUp({
+                email: 'sergio.baez@lge.com',
+                password: 'lg123456'
+            });
+
+            if (e3) log("⚠️ Error/Info Admin: " + e3.message);
+            else if (u3.user) {
+                log("✅ Usuario Admin Creado. ID: " + u3.user.id);
+                // Admin doesn't need a specific company link necessarily, or we can link to a specialized one.
+                // For now, just ensure the profile has 'admin' role.
+                await setAdminRole(u3.user.id);
+            }
+
             log("=== PROCESO FINALIZADO ===");
         }
 
@@ -92,6 +107,12 @@
 
             if (error) log("❌ Error vinculando perfil: " + error.message);
             else log("✅ Perfil vinculado exitosamente a " + companyName);
+        }
+
+        async function setAdminRole(userId) {
+            const { error } = await supabase.from('profiles').update({ role: 'admin' }).eq('id', userId);
+            if (error) log("❌ Error configurando rol admin: " + error.message);
+            else log("✅ Rol Admin asignado correctamente.");
         }
     </script>
 </body>

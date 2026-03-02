@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Admin (Debug)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #A50034;
+        }
+
+        input {
+            padding: 10px;
+            width: 80%;
+            margin-top: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #A50034;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #8a002b;
+        }
+
+        .log-box {
+            margin-top: 20px;
+            text-align: left;
+            padding: 15px;
+            border-radius: 5px;
+            background: #333;
+            color: #0f0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.8em;
+        }
+
+        .error {
+            color: #ff6b6b;
+        }
+
+        .success {
+            color: #51cf66;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Activación Admin (Modo Diagnóstico)</h1>
+        <p>Si la cuenta principal falla, intenta crear una alternativa o ver el error detallado.</p>
+
+        <label><strong>Email:</strong></label><br>
+        <input type="text" id="emailInput" value="sergio.baez@lge.com">
+        <br><br>
+        <label><strong>Password:</strong></label><br>
+        <input type="text" id="passInput" value="lg123456">
+
+        <br>
+        <button id="btnAction" onclick="runProcess()">CREAR / ACTIVAR</button>
+
+        <div id="logArea" class="log-box">Esperando comando...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+
+        const logArea = document.getElementById('logArea');
+        const btn = document.getElementById('btnAction');
+
+        function log(msg, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            let color = type === 'error' ? '#ff6b6b' : (type === 'success' ? '#51cf66' : '#fff');
+            logArea.innerHTML += `<div style="color:${color}">[${timestamp}] ${msg}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        async function runProcess() {
+            btn.disabled = true;
+            logArea.innerHTML = "";
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passInput').value.trim();
+
+            log(`Iniciando proceso para: ${email}`);
+
+            try {
+                // 1. INTENTAR REGISTRAR (SIGN UP)
+                log("1. Enviando SignUp...");
+                let authResponse = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                let authData = await authResponse.json();
+
+                // Debug response
+                log("Respuesta Auth: " + JSON.stringify(authData, null, 2));
+
+                let user = null;
+                let token = null;
+
+                if (!authResponse.ok) {
+                    if (JSON.stringify(authData).includes("already registered")) {
+                        log("⚠️ Usuario existe. Intentando LOGIN...", "info");
+
+                        // LOGIN
+                        const loginResp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                            method: 'POST',
+                            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+
+                        const loginData = await loginResp.json();
+                        log("Respuesta Login: " + JSON.stringify(loginData, null, 2));
+
+                        if (!loginResp.ok) {
+                            throw new Error("Login falló: " + (loginData.error_description || loginData.msg));
+                        }
+
+                        user = loginData.user;
+                        token = loginData.access_token;
+                    } else {
+                        throw new Error("SignUp falló: " + (authData.msg || authData.message));
+                    }
+                } else {
+                    // REGISTRO EXITOSO
+                    user = authData.user;
+                    token = authData.access_token;
+
+                    if (!user) {
+                        // Case: Email confirmation required, but user object missing from top level?
+                        // Sometimes data is just null?
+                        throw new Error("Registro exitoso pero no retornó objeto User. ¿Requiere confirmación de email?");
+                    }
+
+                    if (!token) {
+                        log("SignUp OK pero sin token (¿Email confirm?). Intentando login forzado...", "info");
+                        const loginResp = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                            method: 'POST',
+                            headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        const loginData = await loginResp.json();
+                        log("Respuesta Login Post-Registro: " + JSON.stringify(loginData, null, 2));
+
+                        if (loginResp.ok) {
+                            token = loginData.access_token;
+                            user = loginData.user;
+                        } else {
+                            throw new Error("No se pudo iniciar sesión tras registro. Probablemente la cuenta requiera confirmación de email y no podemos omitirla.");
+                        }
+                    }
+                }
+
+                if (!user || !user.id) throw new Error("ID de usuario no encontrado en la respuesta.");
+
+                // 2. ACTUALIZAR ROL
+                log(`2. Actualizando Rol para ID: ${user.id}`);
+
+                const updateResp = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({ role: 'admin' })
+                });
+
+                if (!updateResp.ok) {
+                    const errData = await updateResp.json();
+                    log("Error Profile Update: " + JSON.stringify(errData), "error");
+                    throw new Error("Error actualizando perfil");
+                } else {
+                    log("Profile Update OK: " + updateResp.status);
+                }
+
+                log(`✅ ¡ÉXITO TOTAL!`, "success");
+                log(`Ahora puedes ir a CRM/index.html e iniciar sesión con ${email} / ${password}`);
+
+                // Link
+                const link = document.createElement('a');
+                link.href = 'CRM/index.html';
+                link.textContent = "IR AL LOGIN";
+                link.style.cssText = "display:block; margin-top:20px; font-weight:bold; color:#A50034; font-size:20px;";
+                logArea.parentNode.appendChild(link);
+
+            } catch (err) {
+                log(`🛑 ERROR FATAL: ${err.message}`, "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

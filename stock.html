@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Inventario (Stock)</title>
+    <!-- Fonts matching index.html -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Link to Main CSS -->
+    <link rel="stylesheet" href="style.css?v=2024">
+    <link rel="stylesheet" href="responsive.css">
+
+    <!-- Supabase SDK & SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #000;
+        }
+
+        .btn-upload {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(165, 0, 52, 0.2);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-upload:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-clear:hover {
+            background-color: #b91c1c;
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow-card);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #e9ecef;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f8f9fa;
+            color: var(--text-primary);
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stock-high {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .stock-low {
+            color: #ca8a04;
+            font-weight: bold;
+        }
+
+        .stock-zero {
+            color: #dc2626;
+            font-weight: bold;
+        }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #A50034;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Eco Solutions</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span> Aprobaciones</a></li>
+                    <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
+                    <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li id="nav-stock"><a href="stock.html" class="active"><span class="icon">📦</span> Inventario</a>
+                    </li>
+                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
+                        class="icon">↪️</span> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-flex page-header">
+                <button id="mobile-menu-btn" class="mobile-menu-btn"
+                    style="margin-right:1rem; font-size:1.5rem; background:none; border:none;">☰</button>
+                <h2 style="margin: 0;">Disponibilidad de Inventario</h2>
+                <div class="header-actions"
+                    style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+                    <select id="clientSelector" class="hidden"
+                        style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: var(--font-body); font-size: 0.9rem; min-width: 150px;">
+                        <option value="LG">LG Electronics</option>
+                    </select>
+                    <button id="btnClear" class="btn-clear hidden"
+                        style="background-color: var(--danger, #dc2626); color: white; padding: 10px 20px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2); transition: var(--transition);">
+                        Limpiar Datos
+                    </button>
+                    <!-- Este input es invisible y se activa al presionar el boton de subir -->
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" style="display: none;">
+                    <button id="btnUpload" class="btn-upload hidden"
+                        onclick="document.getElementById('excelFile').click()">
+                        <span>⬆️</span> Subir Excel de Inventario
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="stockTable">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>Stock Local (STGO)</th>
+                            <th>+ 1 Semana</th>
+                            <th>+ 2 Semanas</th>
+                            <th>+ 3 Semanas</th>
+                            <th>+ 4 Semanas</th>
+                            <th>+ 5 Semanas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7" style="text-align:center;">Cargando inventario...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- loader -->
+    <div id="loader" class="loader-overlay hidden">
+        <div class="spinner"></div>
+        <div id="loaderText" style="font-weight: 600;">Procesando archivo...</div>
+    </div>
+
+    <script src="mobile-menu.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+            const tableBody = document.querySelector('#stockTable tbody');
+            const fileInput = document.getElementById('excelFile');
+            const btnUpload = document.getElementById('btnUpload');
+            const btnClear = document.getElementById('btnClear');
+            const clientSelector = document.getElementById('clientSelector');
+            const loader = document.getElementById('loader');
+            const loaderText = document.getElementById('loaderText');
+
+            let currentUser = null;
+            let isAdmin = false;
+            let myDistributorId = null;
+
+            async function init() {
+                const session = sessionStorage.getItem('isLoggedIn');
+                if (!session) { window.location.href = 'CRM/index.html'; return; }
+
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError || !user) {
+                    sessionStorage.removeItem('isLoggedIn');
+                    window.location.href = 'CRM/index.html';
+                    return;
+                }
+                currentUser = user;
+
+                // Check Admin and Distributor
+                const { data: profile } = await supabase.from('profiles').select('role, distributor_id').eq('id', user.id).single();
+                isAdmin = (user.email === 'sergio.baezv@usach.cl' || (profile && profile.role === 'admin'));
+
+                if (profile && profile.distributor_id) {
+                    myDistributorId = profile.distributor_id;
+                }
+
+                if (!isAdmin && !myDistributorId) {
+                    alert("Acceso denegado. No tiene empresa asociada ni permisos de administrador.");
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                if (isAdmin) {
+                    document.getElementById('nav-prices').style.display = 'block';
+                    clientSelector.classList.remove('hidden');
+                    btnClear.classList.remove('hidden');
+                    await loadClientsIntoSelector();
+
+                    // Event listeners para admin actions
+                    clientSelector.addEventListener('change', async () => {
+                        const pageTitle = document.querySelector('.page-header h2');
+                        if (pageTitle) {
+                            if (clientSelector.value === 'LG') {
+                                pageTitle.textContent = "Disponibilidad de Inventario (LG)";
+                            } else {
+                                const clientName = clientSelector.options[clientSelector.selectedIndex].text;
+                                pageTitle.textContent = `Disponibilidad de Inventario (${clientName})`;
+                            }
+                        }
+                        await loadInventory();
+                    });
+
+                    btnClear.addEventListener('click', async () => {
+                        const clientName = clientSelector.options[clientSelector.selectedIndex].text;
+                        if (!confirm(`¿Está seguro que desea eliminar todo el inventario de ${clientName}? Esta acción no se puede deshacer.`)) return;
+
+                        loader.classList.remove('hidden');
+                        loaderText.textContent = "Limpiando inventario...";
+                        try {
+                            if (clientSelector.value === 'LG') {
+                                // PostgreSQL delete all requires no specific condition, Supabase might require not('id', 'is', null)
+                                const { error } = await supabase.from('inventory').delete().not('id', 'is', null);
+                                if (error) throw error;
+                            } else {
+                                const { error } = await supabase.from('distributor_inventory').delete().eq('distributor_id', clientSelector.value);
+                                if (error) throw error;
+                            }
+                            alert("Inventario limpiado exitosamente.");
+                            await loadInventory();
+                        } catch (err) {
+                            console.error(err);
+                            alert("Error limpiando inventario: " + err.message);
+                        } finally {
+                            loader.classList.add('hidden');
+                        }
+                    });
+                }
+
+                // Allow upload for both admin and distributors
+                btnUpload.classList.remove('hidden');
+                const pageTitle = document.querySelector('.page-header h2');
+                if (pageTitle) {
+                    pageTitle.textContent = isAdmin ? "Disponibilidad de Inventario (LG)" : "Disponibilidad de Inventario Propio";
+                }
+
+                await loadInventory();
+            }
+
+            async function loadClientsIntoSelector() {
+                const { data: companies, error } = await supabase.from('companies').select('id, name').order('name');
+                if (error) {
+                    console.error("Error loading companies:", error);
+                    return;
+                }
+                companies.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company.id;
+                    option.textContent = company.name;
+                    clientSelector.appendChild(option);
+                });
+            }
+
+            async function loadInventory() {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando inventario...</td></tr>';
+                try {
+                    let data, error;
+                    if (isAdmin) {
+                        if (clientSelector.value === 'LG') {
+                            const res = await supabase.from('inventory').select('*').order('model_suffix', { ascending: true });
+                            data = res.data; error = res.error;
+                        } else {
+                            const res = await supabase.from('distributor_inventory').select('*').eq('distributor_id', clientSelector.value).order('model_suffix', { ascending: true });
+                            data = res.data; error = res.error;
+                        }
+                    } else {
+                        const res = await supabase.from('distributor_inventory').select('*').eq('distributor_id', myDistributorId).order('model_suffix', { ascending: true });
+                        data = res.data; error = res.error;
+                    }
+                    if (error) throw error;
+
+                    tableBody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay inventario registrado.</td></tr>';
+                        return;
+                    }
+
+                    data.forEach(item => {
+                        const sClass = item.stock > 5 ? 'stock-high' : (item.stock > 0 ? 'stock-low' : 'stock-zero');
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="font-weight:600;">${item.model_suffix}</td>
+                            <td class="${sClass}">${item.stock}</td>
+                            <td>${item.week_1 > 0 ? item.week_1 : '-'}</td>
+                            <td>${item.week_2 > 0 ? item.week_2 : '-'}</td>
+                            <td>${item.week_3 > 0 ? item.week_3 : '-'}</td>
+                            <td>${item.week_4 > 0 ? item.week_4 : '-'}</td>
+                            <td>${item.week_5 > 0 ? item.week_5 : '-'}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                } catch (err) {
+                    // Try to catch error if table doesn't exist yet
+                    console.error("Error loading inventory:", err);
+                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">La tabla de inventario no existe o hay un error. Por favor corra SETUP_INVENTORY.sql. Error: ${err.message}</td></tr>`;
+                }
+            }
+
+            // --- EXCEL UPLOAD LOGIC ---
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                loader.classList.remove('hidden');
+                loaderText.textContent = "Leyendo Excel...";
+
+                try {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert to JSON array of arrays (header=1)
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (json.length < 2) throw new Error("El archivo parece estar vacío.");
+
+                    loaderText.textContent = "Procesando datos...";
+
+                    // Find where the headers start (row with "Models", "Stock", etc.)
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(json.length, 10); i++) { // search first 10 rows
+                        const rowStr = JSON.stringify(json[i]).toLowerCase();
+                        if (rowStr.includes('models') && (rowStr.includes('stock') || rowStr.includes('available'))) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+
+                    if (headerRowIdx === -1) throw new Error("No se encontró la fila de encabezados con 'Models' y 'Stock'.");
+
+                    const headers = json[headerRowIdx];
+
+                    // Map column indexes
+                    const getColIdx = (aliases) => {
+                        return headers.findIndex(h => {
+                            if (!h) return false;
+                            const hL = String(h).toLowerCase().trim();
+                            return aliases.some(alias => hL.includes(alias.toLowerCase()));
+                        });
+                    };
+
+                    const idxModels = getColIdx(['Models']);
+                    const idxStock = getColIdx(['Stock', 'Available', 'EOM STGO']);
+                    const idxW1 = getColIdx(['1W']);
+                    const idxW2 = getColIdx(['2W']);
+                    const idxW3 = getColIdx(['3W']);
+                    const idxW4 = getColIdx(['4W']);
+                    const idxW5 = getColIdx(['5W']);
+
+                    if (idxModels === -1 || idxStock === -1) {
+                        throw new Error("Columnas 'Models' o 'Stock' no encontradas correctamente en el archivo.");
+                    }
+
+                    const rowsToUpsert = [];
+
+                    // Loop data rows
+                    for (let i = headerRowIdx + 1; i < json.length; i++) {
+                        const row = json[i];
+                        if (!row[idxModels]) continue; // Skip empty rows
+
+                        const model_suffix = String(row[idxModels]).trim();
+                        // Parse numbers, fallback to 0 if 'D' or empty
+                        const parseVal = (val) => {
+                            if (!val) return 0;
+                            const num = parseInt(val, 10);
+                            return isNaN(num) ? 0 : num;
+                        };
+
+                        let rowObj = {
+                            model_suffix: model_suffix,
+                            stock: parseVal(row[idxStock]),
+                            week_1: idxW1 > -1 ? parseVal(row[idxW1]) : 0,
+                            week_2: idxW2 > -1 ? parseVal(row[idxW2]) : 0,
+                            week_3: idxW3 > -1 ? parseVal(row[idxW3]) : 0,
+                            week_4: idxW4 > -1 ? parseVal(row[idxW4]) : 0,
+                            week_5: idxW5 > -1 ? parseVal(row[idxW5]) : 0,
+                            updated_at: new Date().toISOString()
+                        };
+
+                        if (isAdmin && clientSelector.value !== 'LG') {
+                            rowObj.distributor_id = clientSelector.value;
+                        } else if (!isAdmin) {
+                            rowObj.distributor_id = myDistributorId;
+                        }
+
+                        rowsToUpsert.push(rowObj);
+                    }
+
+                    if (rowsToUpsert.length === 0) throw new Error("No se encontraron datos válidos debajo de las cabeceras.");
+
+                    loaderText.textContent = "Guardando " + rowsToUpsert.length + " modelos en la base de datos...";
+
+                    // Bulk upsert into Supabase
+                    let error;
+                    if (isAdmin) {
+                        if (clientSelector.value === 'LG') {
+                            const res = await supabase.from('inventory').upsert(rowsToUpsert, { onConflict: 'model_suffix' });
+                            error = res.error;
+                        } else {
+                            const res = await supabase.from('distributor_inventory').upsert(rowsToUpsert, { onConflict: 'distributor_id,model_suffix' });
+                            error = res.error;
+                        }
+                    } else {
+                        const res = await supabase.from('distributor_inventory').upsert(rowsToUpsert, { onConflict: 'distributor_id,model_suffix' });
+                        error = res.error;
+                    }
+
+                    if (error) throw error;
+
+                    alert("Inventario subido exitosamente (" + rowsToUpsert.length + " productos actualizados).");
+                    await loadInventory();
+
+                } catch (err) {
+                    console.error("Error process excel", err);
+                    alert("Error procesando Excel: " + err.message);
+                } finally {
+                    loader.classList.add('hidden');
+                    fileInput.value = ''; // Reset
+                }
+            });
+
+            init();
+        });
+    </script>
+</body>
+
+</html>

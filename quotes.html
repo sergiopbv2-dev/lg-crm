@@ -272,6 +272,99 @@
             opacity: 1;
             color: #A50034;
         }
+
+        /* Grid Layout for Form */
+        .form-grid-layout {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            align-items: end;
+            /* Align to bottom for labels */
+        }
+
+        .form-col-1 {
+            grid-column: span 1;
+        }
+
+        .form-col-2 {
+            grid-column: span 2;
+        }
+
+        .form-col-3 {
+            grid-column: span 3;
+        }
+
+        .form-col-4 {
+            grid-column: span 4;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .form-grid-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .form-col-1,
+            .form-col-2,
+            .form-col-3 {
+                grid-column: span 1;
+            }
+
+            .form-col-4 {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .form-grid-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .form-col-1,
+            .form-col-2,
+            .form-col-3,
+            .form-col-4 {
+                grid-column: span 1;
+            }
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 42px;
+            /* Match input height */
+            background: #f8f9fa;
+            padding: 0 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .checkbox-wrapper:hover {
+            background: #e9ecef;
+        }
+
+        .checkbox-wrapper input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #A50034;
+        }
+
+        .checkbox-wrapper label {
+            margin: 0 !important;
+            cursor: pointer;
+            font-weight: 500 !important;
+        }
+
+        /* Overrides */
+        .quote-header-inputs {
+            display: none;
+        }
+
+        /* Hide old */
     </style>
 </head>
 
@@ -299,6 +392,7 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
@@ -369,18 +463,20 @@
                 </div>
 
                 <div class="quote-header">
-                    <!-- Top Row: Identification -->
-                    <div class="quote-header-inputs" style="grid-template-columns: 100px 2fr 1fr 1fr;">
-                        <div class="input-group">
+                    <div class="form-grid-layout">
+                        <!-- ROW 1 -->
+                        <div class="input-group form-col-1">
                             <label>Código</label>
                             <input type="text" id="quoteCode" readonly
                                 style="background:#f0f0f0; font-weight:bold; color:#A50034; text-align:center;">
                         </div>
-                        <div class="input-group">
+                        <div class="input-group form-col-3">
                             <label>Nombre del Proyecto</label>
                             <input type="text" id="projectName" placeholder="Ej: Edificio Costanera">
                         </div>
-                        <div class="input-group">
+
+                        <!-- ROW 2 -->
+                        <div class="input-group form-col-1">
                             <label>Etapa</label>
                             <select id="quoteStage" style="font-weight:bold;">
                                 <option value="Registration">Registration</option>
@@ -391,90 +487,103 @@
                                 <option value="Lost">Lost</option>
                             </select>
                         </div>
-                        <div class="input-group">
+                        <div class="input-group form-col-1">
                             <label>Fecha Award</label>
                             <input type="date" id="awardDate" required>
                         </div>
-                    </div>
+                        <div class="input-group form-col-2">
+                            <label>Mercado Vertical</label>
+                            <select id="verticalMarketSelect">
+                                <option value="">Seleccione...</option>
+                                <option value="Corporate / Office">Corporate / Office</option>
+                                <option value="Factory">Factory</option>
+                                <option value="Hospital & Health Care">Hospital & Health Care</option>
+                                <option value="Hotel & Accommodation">Hotel & Accommodation</option>
+                                <option value="Public Facility">Public Facility</option>
+                                <option value="Residential (Home)">Residential (Home)</option>
+                                <option value="Retail">Retail</option>
+                                <option value="Special Purpose">Special Purpose</option>
+                                <option value="Transportation">Transportation</option>
+                            </select>
+                        </div>
 
-                    <div class="header-divider"></div>
+                        <!-- ROW 3 -->
+                        <div class="input-group form-col-2">
+                            <label style="display:flex; justify-content:space-between; align-items:center;">
+                                Cliente
+                                <button onclick="window.onClientChange(document.getElementById('clientSelect').value)"
+                                    class="admin-column"
+                                    style="display:none; background:none; border:none; color:#A50034; cursor:pointer; font-size:0.8em; font-weight:bold; padding:0;"
+                                    type="button"
+                                    title="Forzar actualización de matriz de descuentos a todos los ítems">↻ Recalcular
+                                    Descuentos</button>
+                            </label>
+                            <select id="clientSelect" onchange="window.onClientChange(this.value)">
+                                <option value="">Cargando...</option>
+                            </select>
+                        </div>
+                        <div class="input-group form-col-2">
+                            <label>Consultor</label>
+                            <select id="consultantSelect">
+                                <option value="">Sin Consultor / N/A</option>
+                            </select>
+                        </div>
 
-                    <!-- Bottom Row: Stakeholders & Attributes -->
-                    <!-- Bottom Row: Stakeholders & Attributes -->
-                    <div class="quote-secondary-row">
-                        <!-- Column 1: Companies (Customer & Consultant) -->
-                        <div class="attribute-column">
-                            <div class="input-group" style="margin-bottom: 1rem;">
-                                <label>Cliente</label>
-                                <select id="clientSelect">
-                                    <option value="">Cargando...</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Consultor</label>
-                                <select id="consultantSelect">
-                                    <option value="">Sin Consultor / N/A</option>
-                                </select>
+                        <!-- ROW 4: Qualification / Specs -->
+                        <div class="input-group form-col-1" style="justify-content:end;">
+                            <!-- Checkbox Style -->
+                            <label style="opacity:0;">Spec</label> <!-- Spacer Label -->
+                            <div class="checkbox-wrapper" onclick="document.getElementById('chkSpecIn').click();">
+                                <input type="checkbox" id="chkSpecIn" onclick="event.stopPropagation();"
+                                    onchange="window.toggleBrands();">
+                                <label for="chkSpecIn" style="margin:0;">LG Spec In</label>
                             </div>
                         </div>
 
-                        <!-- Column 2: Strategy Flags -->
-                        <div class="attribute-column">
-                            <!-- Header for alignment -->
-                            <label style="opacity:0; user-select:none;">Clasificación</label>
-                            <div style="display: flex; flex-direction: column; gap: 0.8rem; height: 100%;">
-                                <div class="attribute-group"
-                                    style="padding: 10px 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; flex:1; display:flex; align-items:center;">
-                                    <input type="checkbox" id="chkSpecIn" onchange="window.toggleBrands()"
-                                        style="width: 20px; height: 20px; margin-right: 10px;">
-                                    <label for="chkSpecIn"
-                                        style="margin:0; cursor:pointer; text-transform:none; font-weight:500;">LG Spec
-                                        In</label>
-                                </div>
-                                <div class="attribute-group"
-                                    style="padding: 10px 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; flex:1; display:flex; align-items:center;">
-                                    <input type="checkbox" id="chkRetrofit"
-                                        style="width: 20px; height: 20px; margin-right: 10px;">
-                                    <label for="chkRetrofit"
-                                        style="margin:0; cursor:pointer; text-transform:none; font-weight:500;">Es
-                                        Retrofit</label>
-                                </div>
+                        <div class="input-group form-col-1" style="justify-content:end;">
+                            <label style="opacity:0;">Retro</label>
+                            <div class="checkbox-wrapper" onclick="document.getElementById('chkRetrofit').click();">
+                                <input type="checkbox" id="chkRetrofit" onclick="event.stopPropagation();">
+                                <label for="chkRetrofit" style="margin:0;">Es Retrofit</label>
                             </div>
                         </div>
 
-                        <!-- Column 3: Brand Specification -->
-                        <div class="attribute-column">
-                            <!-- Brand Selection (Conditional) -->
+                        <div class="input-group form-col-2">
+                            <!-- Brand Container -->
                             <div id="brandsContainer" class="hidden" style="width: 100%;">
-                                <div class="input-group">
-                                    <label style="color:#A50034;">Especificado con</label>
-                                    <select id="brandSelect" onchange="window.checkBrandOther()">
-                                        <!-- Populated via JS -->
-                                    </select>
-                                    <input type="text" id="brandOtherInput" placeholder="Nombre de la marca..."
-                                        style="display:none; margin-top:8px;">
-                                </div>
+                                <label style="color:#A50034;">Especificado con</label>
+                                <select id="brandSelect" onchange="window.checkBrandOther()">
+                                    <!-- Populated via JS -->
+                                </select>
+                                <input type="text" id="brandOtherInput" placeholder="Nombre de la marca..."
+                                    style="display:none; margin-top:8px;">
                             </div>
-
                             <!-- Success Banner (Visible if Spec In is TRUE) -->
                             <div id="specInSuccess" class="hidden"
-                                style="display:flex; align-items:center; justify-content:center; height:100%; color: #2e7d32; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
-                                <div style="text-align:center;">
-                                    <div style="font-size:1.5rem;">✓</div>
-                                    <div style="font-weight: bold; font-size:0.9rem;">Especificado con LG</div>
-                                </div>
+                                style="display:flex; align-items:center; justify-content:center; height:42px; width:100%; color: #2e7d32; background: #e8f5e9; border-radius: 6px; border: 1px solid #c8e6c9; margin-top:auto;">
+                                <div style="font-weight: bold; font-size:0.9rem;">✓ Especificado con LG</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="search-container">
-                    <div class="input-group">
-                        <label>Buscar Producto</label>
-                        <div class="search-box">
-                            <input type="text" id="productSearch" placeholder="Escribe 'Multi V' o Modelo...">
-                            <button id="btnSearch"
-                                style="padding:0 15px; cursor:pointer; background:#eee; border:none; border-radius:8px;">🔍</button>
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
+                        <div class="input-group" style="flex:1; min-width:300px;">
+                            <label>Buscar Producto</label>
+                            <div class="search-box">
+                                <input type="text" id="productSearch" placeholder="Escribe 'Multi V' o Modelo...">
+                                <button id="btnSearch"
+                                    style="padding:0 15px; cursor:pointer; background:#eee; border:none; border-radius:8px;">🔍</button>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="file" id="latsExcelInput" accept=".xlsx, .xls" style="display:none;">
+                            <button onclick="document.getElementById('latsExcelInput').click()"
+                                style="background:#28a745; color:white; padding:10px 15px; border-radius:8px; border:none; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:8px;">
+                                <span>📄</span> Cargar LATS (Excel)
+                            </button>
                         </div>
                     </div>
                     <div id="searchResults" class="search-results"></div>
@@ -491,9 +600,14 @@
                                     <button onclick="window.fillDates()" title="Copiar fecha del primero a todos"
                                         style="background:none; border:none; cursor:pointer; color:#A50034; font-weight:bold;">▼</button>
                                 </th>
-                                <th style="text-align:right;">Precio Lista (USD)</th>
-                                <th>Desc %</th>
+                                <th id="thListPriceHeader" style="text-align:right;">Precio Lista (USD)
+                                </th>
+                                <th id="thDescHeader">Desc %</th>
                                 <th style="text-align:right;">Neto (USD)</th>
+                                <th class="admin-column" style="display:none; text-align:right;">Costo
+                                    (USD)</th>
+                                <th class="admin-column" style="display:none; text-align:right;">Profit
+                                    (%)</th>
                                 <th>Cant.</th>
                                 <th style="text-align:right;">Total (USD)</th>
                                 <th></th>
@@ -501,10 +615,59 @@
                         </thead>
                         <tbody><!-- Items --></tbody>
                     </table>
-                    <div style="text-align:right; margin-top:20px; font-size:1.5rem; font-weight:bold;">
-                        Total: <span id="grandTotal">$0.00</span>
+                    <div
+                        style="text-align:right; margin-top:20px; font-size:1.5rem; font-weight:bold; display:flex; flex-direction:column; align-items:flex-end;">
+                        <div>
+                            <span id="grandProfit" class="admin-column"
+                                style="display:none; font-size: 1rem; margin-right: 20px; color: #666;">Margen
+                                Total:
+                                <span style="color:#28a745">0.00%</span></span>Total: <span id="grandTotal">$0.00</span>
+                        </div>
                     </div>
-                    <button class="btn-save" id="btnSave">Guardar Cotización</button>
+
+                    <!-- Discount Request UI (For Distributors) -->
+                    <div class="discount-request-container" id="discountRequestUI"
+                        style="display:none; margin-top:20px; padding:15px; border:1px dashed #A50034; border-radius:8px; background-color:#fff5f7;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-weight:bold; cursor:pointer; color:#A50034;">
+                                <input type="checkbox" id="chkRequestDiscount" onchange="window.toggleDiscountFields()">
+                                ✋ Solicitar Descuento Adicional al Administrador
+                            </label>
+                        </div>
+                        <div id="discountFieldsUI" class="hidden"
+                            style="margin-top: 15px; display:flex; gap:15px; flex-wrap:wrap;">
+                            <div class="input-group" style="flex:1; min-width:200px;">
+                                <label style="color:#A50034; font-weight:600;">% Desc. Extra <em>(En
+                                        base a
+                                        Lista)</em></label>
+                                <input type="number" id="requestedDiscountPct" step="0.1" min="0" max="100"
+                                    placeholder="Ej: 5.5" oninput="render()">
+                            </div>
+                            <div class="input-group" style="flex:2; min-width:300px;">
+                                <label style="color:#A50034; font-weight:600;">Justificación Comercial
+                                    del
+                                    Descuento</label>
+                                <textarea id="discountJustification" rows="2"
+                                    placeholder="Por favor explique por qué se requiere este descuento adicional para cerrar el proyecto..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="adminDiscountActions" class="hidden"
+                        style="margin-top:20px; padding:15px; border-radius:8px; background-color:#e2f2e7; text-align:right; border:1px solid #28a745;">
+                        <span style="font-weight:bold; margin-right:15px; color:#28a745;">Aprobación de
+                            Descuento
+                            (Admin):</span>
+                        <button type="button" class="btn-save" onclick="window.adminApproveDiscount()"
+                            style="background:#28a745; margin-right:10px; border:none; display:inline-block; float:none;">✓
+                            Aprobar</button>
+                        <button type="button" class="btn-save" onclick="window.adminRejectDiscount()"
+                            style="background:#6c757d; border:none; display:inline-block; float:none;">✕
+                            Rechazar</button>
+                    </div>
+
+                    <button class="btn-save" id="btnSave" style="margin-top:20px;">Guardar
+                        Cotización</button>
                 </div>
             </div>
         </main>
@@ -535,6 +698,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 
     <script>
         const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
@@ -547,6 +711,49 @@
         let quoteItems = [];
         let isAdmin = false;
         let targetQuoteIdForDelete = null;
+        let adminCostsStrMatch = [];
+
+        async function loadAdminCosts() {
+            if (!isAdmin) return;
+            const { data, error } = await db.from('product_costs').select('*');
+            if (data && !error) {
+                adminCostsStrMatch = data;
+            }
+        }
+
+        function findCostForProduct(p) {
+            if (!isAdmin || !adminCostsStrMatch.length || !p) return 0;
+
+            // 1. Exact match by model_suffix
+            let match = adminCostsStrMatch.find(c => c.model_suffix === p.model_suffix);
+            if (match) return Number(match.unit_variable_cost);
+
+            // 2. Exact match by model_short
+            match = adminCostsStrMatch.find(c => c.model_suffix === p.model_short);
+            if (match) return Number(match.unit_variable_cost);
+
+            // 3. Base prefix match: p.model_suffix.split('.')[0] == c.model_suffix
+            if (p.model_suffix) {
+                let baseProd = p.model_suffix.split('.')[0];
+                match = adminCostsStrMatch.find(c => c.model_suffix === baseProd);
+                if (match) return Number(match.unit_variable_cost);
+
+                // 4. Base prefix match both sides
+                match = adminCostsStrMatch.find(c => {
+                    let baseCost = c.model_suffix ? c.model_suffix.split('.')[0] : '';
+                    return baseCost === baseProd;
+                });
+                if (match) return Number(match.unit_variable_cost);
+            }
+
+            // 5. StartsWith partial match
+            if (p.model_suffix) {
+                match = adminCostsStrMatch.find(c => p.model_suffix.startsWith(c.model_suffix));
+                if (match) return Number(match.unit_variable_cost);
+            }
+
+            return 0;
+        }
 
         // Render Action Buttons based on Stage & Role
         function renderActionButtons(q) {
@@ -674,6 +881,7 @@
                 }
 
                 await loadProfileData();
+                await loadAdminCosts();
 
                 if (myDistributorId || isAdmin) {
                     await loadRecentQuotes();
@@ -681,9 +889,21 @@
                     await loadConsultants();
                 }
 
+                if (myDistributorId && !isAdmin) {
+                    const { data: dData } = await db.from('distributor_discounts').select('*').eq('distributor_id', myDistributorId);
+                    if (dData) dData.forEach(dd => myDiscounts[dd.category] = dd.discount_percent);
+                }
+
                 await loadBrands();
                 setupSearch();
                 document.getElementById('btnSave').addEventListener('click', saveQuote);
+
+                // Handle edit redirect from Approvals
+                const urlParams = new URLSearchParams(window.location.search);
+                const editId = urlParams.get('edit');
+                if (editId) {
+                    editQuote(editId);
+                }
 
             } catch (e) {
                 console.error(e);
@@ -779,7 +999,7 @@
                     editQuote(q.id);
                 };
 
-                tr.innerHTML = `
+                let rowHTML = `
                     <td style="font-weight:bold; color:#555;">${distName}</td>
                     <td><strong>${q.project_name || '-'}</strong> <span class="edit-icon">✎</span></td>
                     <td>${q.quote_code || '---'}</td>
@@ -797,6 +1017,7 @@
                         ${renderActionButtons(q)}
                     </td>
                 `;
+                tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
@@ -853,9 +1074,24 @@
                 const { data: q, error: qe } = await db.from('quotes').select('*').eq('id', id).single();
                 if (qe) throw qe;
 
-                // Fetch Items (No Join used to prevent Schema Error, manual fetch)
-                const { data: items, error: ie } = await db.from('quote_items').select('*').eq('quote_id', id);
-                if (ie) throw ie;
+                // Fetch Items
+                let items = [];
+                // If Admin, try to use the secure RPC to get costs
+                if (isAdmin) {
+                    const { data: adminItems, error: rpcErr } = await db.rpc('get_admin_quote_items', { p_quote_id: id });
+                    if (!rpcErr && adminItems) {
+                        items = adminItems;
+                    } else {
+                        console.warn("Could not fetch admin items with costs, falling back to standard items", rpcErr);
+                        const { data: stdItems, error: ie } = await db.from('quote_items').select('*').eq('quote_id', id);
+                        if (ie) throw ie;
+                        items = stdItems;
+                    }
+                } else {
+                    const { data: stdItems, error: ie } = await db.from('quote_items').select('*').eq('quote_id', id);
+                    if (ie) throw ie;
+                    items = stdItems;
+                }
 
                 // Manual Fetch Products
                 const pIds = items.map(i => i.product_id);
@@ -870,18 +1106,27 @@
                 currentQuoteId = id;
                 document.getElementById('formTitle').textContent = "Editar Cotización " + q.quote_code;
 
+                // Clear state before loading
+                quoteItems = [];
+
                 document.getElementById('viewList').classList.add('hidden');
                 document.getElementById('viewForm').classList.remove('hidden');
 
                 document.getElementById('quoteCode').value = q.quote_code;
                 document.getElementById('projectName').value = q.project_name;
                 document.getElementById('clientSelect').value = q.client_id || "";
-                document.getElementById('clientSelect').value = q.client_id || "";
+
+                // Fetch dynamic matrix if admin, pass true flag to not recalc items yet since quoteItems is empty anyway
+                if (q.client_id && isAdmin) {
+                    await window.onClientChange(q.client_id, true);
+                }
+
                 document.getElementById('awardDate').value = q.award_date;
                 document.getElementById('quoteStage').value = q.stage || "Registration";
 
                 // Set New Fields
                 document.getElementById('consultantSelect').value = q.consultant_id || ""; // Load ID
+                document.getElementById('verticalMarketSelect').value = q.vertical_market || "";
                 document.getElementById('chkSpecIn').checked = q.is_spec_in || false;
                 document.getElementById('chkRetrofit').checked = q.is_retrofit || false;
 
@@ -918,14 +1163,49 @@
                 // Reconstruct Items
                 quoteItems = items.map(i => {
                     const prod = productsMap[i.product_id] || { model_short: 'Unknown', list_price: 0, description: '', category: 'Unknown' };
+                    // Resolve cost dynamically if not saved locally
+                    let itemCost = i.unit_variable_cost || i.historical_unit_cost || 0;
+                    if (isAdmin && !itemCost && prod.model_short !== 'Unknown') {
+                        itemCost = findCostForProduct(prod);
+                    }
+
                     return {
                         product: prod,
                         qty: i.quantity,
-                        disc: i.applied_discount,
+                        disc: i.applied_discount ?? i.discount_percent ?? ((1 - (i.final_unit_price / prod.list_price)) * 100),
                         net: i.final_unit_price,
-                        delivery_date: i.delivery_date || ''
+                        delivery_date: i.delivery_date || '',
+                        cost: itemCost // Store cost for admins
                     };
                 });
+
+                // Show admin columns if admin
+                if (isAdmin) {
+                    document.querySelectorAll('.admin-column').forEach(el => el.style.display = 'table-cell');
+                    document.getElementById('grandProfit').style.display = 'inline-block';
+                    document.getElementById('discountRequestUI').style.display = 'none';
+                } else {
+                    document.querySelectorAll('.admin-column').forEach(el => el.style.display = 'none');
+                    document.getElementById('grandProfit').style.display = 'none';
+                    document.getElementById('discountRequestUI').style.display = 'block';
+                }
+
+                // Hydrate discount fields if they exist
+                document.getElementById('chkRequestDiscount').checked = (q.requested_discount_pct > 0 || q.stage === 'Discount_Pending');
+                document.getElementById('requestedDiscountPct').value = q.requested_discount_pct || '';
+                document.getElementById('discountJustification').value = q.discount_justification || '';
+                window.toggleDiscountFields();
+
+                // Admin actions for pending discounts
+                if (isAdmin && q.stage === 'Discount_Pending') {
+                    document.getElementById('adminDiscountActions').classList.remove('hidden');
+                    document.getElementById('btnSave').style.display = 'none';
+                } else {
+                    document.getElementById('adminDiscountActions').classList.add('hidden');
+                    document.getElementById('btnSave').style.display = 'block';
+                }
+
+                // Now call render so projection calculates with the hydrated discount
                 render();
 
             } catch (e) {
@@ -933,16 +1213,70 @@
             }
         }
 
+        window.adminApproveDiscount = async () => {
+            if (!confirm("Al aprobar el descuento, este se sumará automáticamente a los descuentos base que ya tenía la cotización.\n\nLa cotización se guardará y su estado volverá a 'Registration'.\n\n¿Continuar?")) return;
+
+            // Auto-apply extra discount to all lines
+            const reqDiscountStr = document.getElementById('requestedDiscountPct').value;
+            const extraDiscount = parseFloat(reqDiscountStr || 0);
+
+            if (extraDiscount > 0) {
+                quoteItems.forEach(x => {
+                    const newNet = x.net * ((100 - extraDiscount) / 100);
+                    const newTotalDiscountPct = 100 * (1 - (newNet / x.product.list_price));
+                    x.disc = Math.min(newTotalDiscountPct, 100);
+                    x.net = newNet;
+                });
+                render();
+            }
+
+            document.getElementById('quoteStage').value = 'Registration';
+            document.getElementById('requestedDiscountPct').value = '';
+            document.getElementById('discountJustification').value = '';
+            document.getElementById('adminDiscountActions').classList.add('hidden');
+            document.getElementById('btnSave').style.display = 'block';
+            await saveQuote(true);
+            window.close(); // Attempt to close window if opened from Approvals tab
+        };
+
+        window.adminRejectDiscount = async () => {
+            if (!confirm("¿Rechazar solicitud de descuento? \n\nLa cotización volverá al estado 'Registration' sin cambios adicionales en tarifas.")) return;
+            document.getElementById('quoteStage').value = 'Registration';
+            document.getElementById('requestedDiscountPct').value = '';
+            document.getElementById('discountJustification').value = '';
+            document.getElementById('adminDiscountActions').classList.add('hidden');
+            document.getElementById('btnSave').style.display = 'block';
+            // Need to save the changes so the pending status falls back to normal
+            await saveQuote(true);
+            window.close();
+        };
+
+        window.toggleDiscountFields = () => {
+            const chk = document.getElementById('chkRequestDiscount');
+            const fld = document.getElementById('discountFieldsUI');
+            if (chk && fld) {
+                if (chk.checked) {
+                    fld.classList.remove('hidden');
+                    document.getElementById('btnSave').textContent = "Solicitar Aprobación de Descuento";
+                } else {
+                    fld.classList.add('hidden');
+                    document.getElementById('btnSave').textContent = "Guardar Cotización";
+                }
+            }
+        };
+
         async function loadClients() {
             const s = document.getElementById('clientSelect');
 
             // Logic: Clients list should show Installers OR End Users.
             // Consultants (who are ONLY consultants) should be excluded.
             // Supabase 'or' query formatting: "is_installer.eq.true,is_end_user.eq.true"
-            let q = db.from('clients').select('id, company_name, distributor_id') // Added distributor_id
-                .or('is_installer.eq.true,is_end_user.eq.true');
+            let q = db.from('clients').select('id, company_name, distributor_id'); // Added distributor_id
 
-            if (!isAdmin) q = q.eq('distributor_id', myDistributorId);
+            if (!isAdmin) {
+                q = q.eq('distributor_id', myDistributorId);
+                q = q.or('is_installer.eq.true,is_end_user.eq.true');
+            }
 
             const { data: c, error } = await q;
 
@@ -974,19 +1308,34 @@
             document.getElementById('viewForm').classList.remove('hidden');
             document.getElementById('quoteCode').value = 'CH' + Math.floor(10000 + Math.random() * 90000);
             quoteItems = []; render();
-            document.getElementById('projectName').value = '';
+
+            // Show admin columns if admin
+            if (isAdmin) {
+                document.querySelectorAll('.admin-column').forEach(el => el.style.display = 'table-cell');
+                document.getElementById('grandProfit').style.display = 'inline-block';
+                document.getElementById('discountRequestUI').style.display = 'none';
+            } else {
+                document.querySelectorAll('.admin-column').forEach(el => el.style.display = 'none');
+                document.getElementById('grandProfit').style.display = 'none';
+                document.getElementById('discountRequestUI').style.display = 'block';
+            }
+
             document.getElementById('projectName').value = '';
             document.getElementById('awardDate').value = '';
             document.getElementById('quoteStage').value = "Registration";
             document.getElementById('clientSelect').value = "";
-            document.getElementById('projectName').value = '';
-            document.getElementById('awardDate').value = '';
-            document.getElementById('clientSelect').value = "";
             document.getElementById('consultantSelect').value = "";
-            document.getElementById('consultantSelect').value = "";
+            document.getElementById('verticalMarketSelect').value = "";
             document.getElementById('chkSpecIn').checked = false;
             document.getElementById('chkRetrofit').checked = false;
             document.getElementById('brandSelect').value = "";
+
+            // Clear discount requests
+            document.getElementById('chkRequestDiscount').checked = false;
+            document.getElementById('requestedDiscountPct').value = '';
+            document.getElementById('discountJustification').value = '';
+            window.toggleDiscountFields();
+
             window.checkBrandOther();
             window.toggleBrands();
         };
@@ -998,8 +1347,12 @@
 
         // PDF Generation
         window.generatePDF = async (id) => {
-            const deliveryDate = prompt("Ingrese la Fecha Estimada de Entrega (ej. 2026-04-29):", new Date().toISOString().split('T')[0]);
+            let defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 90);
+            const defaultDateStr = defaultDate.toISOString().split('T')[0];
+            const deliveryDate = prompt("Ingrese la Fecha Estimada de Entrega (ej. 2026-04-29):", defaultDateStr);
             if (deliveryDate === null) return; // Cancelled
+            const includeStock = confirm("¿Desea incluir el estatus y disponibilidad de stock en el PDF de la cotización?");
 
             try {
                 const { jsPDF } = window.jspdf;
@@ -1064,7 +1417,7 @@
                 if (q.user_id) {
                     const { data: userProfile } = await db.from('profiles').select('full_name, distributor_id').eq('id', q.user_id).single();
                     if (userProfile) {
-                        sellerName = userProfile.full_name;
+                        sellerName = userProfile.full_name || 'Ejecutivo';
                         // Fallback: If quote heavily relies on creator context
                         if (!distributorId && userProfile.distributor_id) {
                             distributorId = userProfile.distributor_id;
@@ -1073,11 +1426,23 @@
                 }
 
                 let recipientName = q.clients?.company_name || "Cliente";
+                let finalAttn = q.clients?.contact_name || "";
 
                 // If quote is linked to a Distributor (directly or via creator), address it to the Distributor
                 if (distributorId) {
                     const { data: dist } = await db.from('companies').select('name').eq('id', distributorId).single();
-                    if (dist) recipientName = dist.name;
+                    if (dist && dist.name) {
+                        const isLG = dist.name.toUpperCase().includes('LG ELECTRONICS') || dist.name.toUpperCase().startsWith('LG ');
+                        if (!isLG) {
+                            // Quote is addressed to the Distributor
+                            recipientName = dist.name;
+                            finalAttn = sellerName;
+                        } else {
+                            // Quote is made by LG directly, address it to the Client explicitly
+                            recipientName = q.clients?.company_name || "Cliente";
+                            finalAttn = q.clients?.contact_name || "";
+                        }
+                    }
                 }
 
                 // 3. Fetch Items
@@ -1087,9 +1452,49 @@
                 // 4. Fetch Products Manually
                 const productIds = [...new Set(items.map(i => i.product_id).filter(Boolean))];
                 let productsMap = {};
+                let stockDataMap = {};
                 if (productIds.length > 0) {
                     const { data: prods } = await db.from('products').select('id, model_short, description, category').in('id', productIds);
                     if (prods) prods.forEach(p => productsMap[p.id] = p);
+
+                    if (includeStock) {
+                        for (const pid of productIds) {
+                            const pModel = productsMap[pid]?.model_short;
+                            if (pModel) {
+                                // 1. LG Inventory
+                                const { data: lgData } = await db.from('inventory').select('*').ilike('model_suffix', `${pModel}%`);
+                                let lgTotal = 0, lgW1 = 0, lgW2 = 0, lgW3 = 0, lgW4 = 0, lgW5 = 0;
+                                if (lgData && lgData.length > 0) {
+                                    lgData.forEach(r => {
+                                        lgTotal += r.stock || 0;
+                                        lgW1 += r.week_1 || 0; lgW2 += r.week_2 || 0; lgW3 += r.week_3 || 0; lgW4 += r.week_4 || 0; lgW5 += r.week_5 || 0;
+                                    });
+                                }
+
+                                // 2. Distributor Inventory (if applicable)
+                                let distTotal = 0, distW1 = 0, distW2 = 0, distW3 = 0, distW4 = 0, distW5 = 0;
+                                let hasDistStock = false;
+                                if (!isAdmin && myDistributorId) {
+                                    hasDistStock = true;
+                                    const { data: distData } = await db.from('distributor_inventory')
+                                        .select('*')
+                                        .eq('distributor_id', myDistributorId)
+                                        .ilike('model_suffix', `${pModel}%`);
+                                    if (distData && distData.length > 0) {
+                                        distData.forEach(r => {
+                                            distTotal += r.stock || 0;
+                                            distW1 += r.week_1 || 0; distW2 += r.week_2 || 0; distW3 += r.week_3 || 0; distW4 += r.week_4 || 0; distW5 += r.week_5 || 0;
+                                        });
+                                    }
+                                }
+
+                                stockDataMap[pid] = {
+                                    totalStock: lgTotal, tW1: lgW1, tW2: lgW2, tW3: lgW3, tW4: lgW4, tW5: lgW5,
+                                    hasDistStock, distTotal, distW1, distW2, distW3, distW4, distW5
+                                };
+                            }
+                        }
+                    }
                 }
 
                 // --- HEADER (First Page) ---
@@ -1110,14 +1515,16 @@
                 doc.text("Presente", 14, 55);
 
                 // Quote Info
-                doc.text(`At: ${sellerName}`, 130, 50);
+                doc.text(`At: ${finalAttn}`, 130, 50);
                 doc.setFont("helvetica", "bold");
                 doc.text(`Cotización: ${q.quote_code}`, 130, 55);
 
                 // Project Info
                 doc.setFont("helvetica", "normal");
                 doc.text(`Proyecto: ${q.project_name}`, 14, 75);
-                doc.text(`Fecha estimada de entrega:   ${deliveryDate}`, 14, 80);
+                // Explicitly show who the final destination is, clarifying the B2B relationship
+                doc.text(`Cliente Final / Oportunidad: ${q.clients?.company_name || 'N/A'}`, 14, 80);
+                doc.text(`Fecha estimada de entrega:   ${deliveryDate}`, 14, 85);
 
                 // Table Rows
                 const tableBody = items.map(i => {
@@ -1135,9 +1542,9 @@
                     startY: 90,
                     head: [['Modelo', 'Descripcion', 'Cantidad', 'P.Unit', 'Total']],
                     body: tableBody,
-                    theme: 'plain',
-                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
-                    styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold', lineColor: [0, 0, 0] },
+                    styles: { fontSize: 9, cellPadding: 3, valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.1 },
                     columnStyles: {
                         0: { cellWidth: 35 },
                         1: { cellWidth: 'auto' },
@@ -1145,7 +1552,7 @@
                         3: { cellWidth: 25, halign: 'right' },
                         4: { cellWidth: 25, halign: 'right' }
                     },
-                    margin: { right: 14, left: 14 }
+                    margin: { top: 35, right: 14, left: 14 }
                 });
 
                 // Total
@@ -1163,8 +1570,118 @@
                 doc.setLineWidth(0.5);
                 doc.line(14, finalY + 2, pageWidth - rightMargin, finalY + 2); // Underline full width
 
+                // --- STOCK TABLE (Optional) ---
+                if (includeStock && items.length > 0) {
+                    let yStock = finalY + 15;
+                    const checkPageS = (h) => {
+                        if (yStock + h > 270) {
+                            doc.addPage();
+                            yStock = 35;
+                        }
+                    };
+
+                    checkPageS(10);
+                    doc.setFontSize(9);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(A50034_hex = "#A50034"); // Uses red color roughly
+                    doc.setTextColor(165, 0, 52);
+                    doc.text("ESTADO DE DISPONIBILIDAD (REFERENCIAL)", 14, yStock);
+                    yStock += 6;
+
+                    const stockTableBody = items.map(i => {
+                        const prod = productsMap[i.product_id] || {};
+                        const s = stockDataMap[i.product_id];
+                        let statusLine = "Consulta Manual";
+
+                        const calcStatus = (sData, reqQty, prefix) => {
+                            if (sData.total >= reqQty) {
+                                return `[${prefix}] Disponibilidad inmediata`;
+                            }
+
+                            const udStr = (qty) => qty === 1 ? 'unidad' : 'unidades';
+                            const verbArribar = (qty) => qty === 1 ? 'arriba' : 'arriban';
+                            const verbArribarCap = (qty) => qty === 1 ? 'Arriba' : 'Arriban';
+                            let transito = sData.w1 + sData.w2 + sData.w3 + sData.w4 + sData.w5;
+
+                            if (sData.total > 0 && sData.total < reqQty) {
+                                let diff = reqQty - sData.total;
+                                let baseStr = `[${prefix}] Stock ${sData.total} ${udStr(sData.total)}`;
+
+                                if (transito >= diff) {
+                                    let semanas = sData.w1 >= diff ? 1 : (sData.w1 + sData.w2) >= diff ? 2 : (sData.w1 + sData.w2 + sData.w3) >= diff ? 3 : (sData.w1 + sData.w2 + sData.w3 + sData.w4) >= diff ? 4 : sData.w5 > 0 ? 5 : 0;
+                                    return `${baseStr}, saldo en +${semanas} semana(s)`;
+                                } else if (transito > 0) {
+                                    let semanas = sData.w5 > 0 ? 5 : sData.w4 > 0 ? 4 : sData.w3 > 0 ? 3 : sData.w2 > 0 ? 2 : sData.w1 > 0 ? 1 : 0;
+                                    return `${baseStr}, ${transito} ${verbArribar(transito)} en +${semanas} semana(s) y saldo de importación`;
+                                } else {
+                                    return `${baseStr}, saldo de importación`;
+                                }
+                            } else {
+                                if (transito >= reqQty) {
+                                    let semanas = sData.w1 >= reqQty ? 1 : (sData.w1 + sData.w2) >= reqQty ? 2 : (sData.w1 + sData.w2 + sData.w3) >= reqQty ? 3 : (sData.w1 + sData.w2 + sData.w3 + sData.w4) >= reqQty ? 4 : sData.w5 > 0 ? 5 : 0;
+                                    return `[${prefix}] Arribo en +${semanas} semana(s)`;
+                                } else if (transito > 0) {
+                                    let semanas = sData.w5 > 0 ? 5 : sData.w4 > 0 ? 4 : sData.w3 > 0 ? 3 : sData.w2 > 0 ? 2 : sData.w1 > 0 ? 1 : 0;
+                                    return `[${prefix}] ${verbArribarCap(transito)} ${transito} ${udStr(transito)} en +${semanas} semana(s) y saldo de importación`;
+                                } else {
+                                    return `[${prefix}] De importación`;
+                                }
+                            }
+                        };
+
+                        if (s) {
+                            let reqQty = i.quantity;
+                            let lgStatus = calcStatus({
+                                total: s.totalStock, w1: s.tW1, w2: s.tW2, w3: s.tW3, w4: s.tW4, w5: s.tW5
+                            }, reqQty, "LG");
+
+                            statusLine = lgStatus;
+
+                            if (s.hasDistStock) {
+                                let distStatus = calcStatus({
+                                    total: s.distTotal, w1: s.distW1, w2: s.distW2, w3: s.distW3, w4: s.distW4, w5: s.distW5
+                                }, reqQty, "Propio");
+                                statusLine = `${distStatus}\n${lgStatus}`;
+                            }
+                        }
+
+                        return [
+                            prod.model_short || 'N/A',
+                            i.quantity,
+                            statusLine
+                        ];
+                    });
+
+                    doc.autoTable({
+                        startY: yStock,
+                        head: [['Modelo', 'Cantidad', 'Observaciones']],
+                        body: stockTableBody,
+                        theme: 'grid',
+                        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold', lineColor: [0, 0, 0] },
+                        styles: { fontSize: 9, cellPadding: 3, valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.1 },
+                        columnStyles: {
+                            0: { cellWidth: 35 },
+                            1: { cellWidth: 20, halign: 'center' },
+                            2: { cellWidth: 'auto' }
+                        },
+                        margin: { top: 35, right: 14, left: 14 }
+                    });
+
+                    yStock = doc.lastAutoTable.finalY + 5;
+                    checkPageS(15);
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(7);
+                    doc.setTextColor(100, 100, 100);
+                    const disclaimer = "Nota: Stock disponible salvo ventas previas. El stock analizado puede tener un desfase de 7 días respecto a lo informado. No se pueden bloquear o reservar unidades sin haber materializado su Orden de Compra formal y contar con la confirmación de su KAM.";
+                    const splitDisclaimer = doc.splitTextToSize(disclaimer, pageWidth - rightMargin - 14);
+                    doc.text(splitDisclaimer, 14, yStock);
+
+                    finalY = yStock + (splitDisclaimer.length * 3) + 2;
+                }
+
                 // --- CONDITIONS ---
-                let y = finalY + 15;
+                doc.addPage();
+                let y = 35;
 
                 const checkPage = (h) => {
                     if (y + h > 270) {
@@ -1176,7 +1693,6 @@
                 doc.setFontSize(9); // Consistent size
                 doc.setTextColor(0, 0, 0);
 
-                checkPage(10);
                 doc.setFont("helvetica", "bold");
                 doc.text("CONDICIONES COMERCIALES", 14, y); y += 6;
 
@@ -1216,15 +1732,31 @@
                     {
                         title: "VALIDEZ DE OFERTA",
                         points: [
-                            "15 días calendario desde la fecha de generación de la cotización, hasta agotar stock o hasta emisión de nuevo listado de precios por LG Electronics."
+                            "La presente oferta tiene una validez máxima de 45 días calendario contados a partir de la fecha de emisión de esta cotización, estando sujeta a disponibilidad de stock o hasta la emisión de un nuevo listado de precios por parte de LG Electronics."
                         ]
                     },
                     {
-                        title: "PRECAUCIONES",
+                        title: "ALCANCE Y EXCLUSIONES DE LA OFERTA",
                         points: [
-                            "El instalador, una vez reciba el equipamiento, deberá indicar fechas estimadas para comenzar el proceso de Commissioning. La re coordinación o anulación de las asistencias y visitas se deberán informar directamente al equipo de servicio con al menos un mes de anticipación; de lo contrario, se considerarán como servicio prestado. Por tanto, en caso de requerir una nueva fecha, se deberá solicitar un presupuesto adicional y disponibilidad al equipo de servicio por estas visitas y trabajos.",
+                            "LG Electronics Chile Ltda. comercializa exclusivamente productos y equipamiento. La presente oferta no contempla servicios de ingeniería de proyecto, instalación, integración ni responsabilidades asociadas al desempeño global del sistema en obra, más allá del suministro del equipamiento detallado en esta cotización.",
+                            "No se aceptarán devoluciones, cambios ni anulaciones de productos asociados a condiciones particulares de proyecto, selección técnica específica o requerimientos especiales definidos por el cliente o su equipo de ingeniería. Toda venta se considera firme una vez confirmada y aceptada la Orden de Compra."
+                        ]
+                    },
+                    {
+                        title: "CAPACITACIÓN Y SERVICIOS TÉCNICOS",
+                        points: [
+                            "LG Electronics Chile Ltda. ofrece capacitación y entrenamiento técnico gratuito a su red de clientes, instaladores y empresas asociadas a la compra de los productos. Estas capacitaciones podrán realizarse de manera presencial en la Academia LG o en modalidad remota.",
+                            "Para mantener la validez de la garantía de los sistemas, será requisito que el personal técnico responsable de la instalación y mantenimiento haya completado los cursos oficiales de capacitación LG correspondientes al tipo de producto adquirido.",
+                            "LG Electronics Chile Ltda. ofrece supervisión de puesta en marcha exclusivamente para productos de las líneas Multi V y Chiller dentro de la Región Metropolitana de Santiago. En caso de requerirse supervisión en otras regiones de Chile o en cualquier punto del territorio de Bolivia, los costos asociados a traslado, estadía, viáticos y logística serán cotizados y facturados adicionalmente.",
+                            "Cualquier servicio distinto al suministro del producto, incluyendo visitas técnicas adicionales, reprogramaciones o asistencias fuera de lo previamente acordado, será cotizado de manera independiente."
+                        ]
+                    },
+                    {
+                        title: "PRECAUCIONES Y COMMISSIONING",
+                        points: [
+                            "El instalador, una vez reciba el equipamiento, deberá indicar fechas estimadas para comenzar el proceso de Commissioning. La re coordinación o anulación de las asistencias y visitas se deberán informar directamente al equipo de servicio con al menos un mes de anticipación; de lo contrario, se considerarán como servicio prestado.",
                             "Es responsabilidad de la empresa instaladora ejecutar los trabajos conforme a los manuales de instalación, ingeniería y estándares locales e internacionales.",
-                            "Es responsabilidad de la empresa instaladora enviar al equipo de Commissioning los diagramas actualizados de cañerías, fuerza y control para cargar la cantidad de refrigerante adecuada."
+                            "Es responsabilidad de la empresa instaladora enviar al equipo de Commissioning los diagramas actualizados de cañerías, fuerza y control para revisar validaciones antes de la carga de refrigerante."
                         ]
                     }
                 ];
@@ -1261,7 +1793,7 @@
                 doc.setTextColor(0, 0, 0);
 
                 conditionsData.forEach(section => {
-                    checkPage(10);
+                    checkPage(20); // Suficiente espacio para que un subtítulo no quede solo sin su párrafo incial
                     if (section.title) {
                         doc.setFont("helvetica", "bold");
                         doc.setFontSize(9);
@@ -1293,6 +1825,7 @@
                 const anexoIntro = "Si su equipo acondicionador de aire tipo VRF-Multi V 5 resultara defectuoso debido a causas asociadas a los materiales y mano de obra utilizados durante la fabricación, LG Electronics inc. Chile Ltda. (LGECL) reemplazará la(s) piezas(s) defectuosa(s). La(s) pieza(s) de repuesto que se utilizarán será piezas originales fabricadas para este propósito. La(s) pieza(s) de repuesto estará garantizada por el tiempo restante del período de garantía original.";
                 printJustifiedParagraph(anexoIntro, 14, y, 180);
 
+                checkPage(20);
                 doc.setFont("helvetica", "bold");
                 doc.text("Condiciones de garantía:", 14, y); y += 5;
                 doc.setFont("helvetica", "normal");
@@ -1308,6 +1841,7 @@
                 garantiaPoints.forEach(p => printJustifiedParagraph(p, 14, y, 180));
                 y += 2;
 
+                checkPage(20);
                 doc.setFont("helvetica", "bold");
                 doc.text("Periodo de garantía:", 14, y); y += 5;
                 doc.setFont("helvetica", "normal");
@@ -1320,7 +1854,7 @@
                 y += 2;
 
                 // --- EXCLUSIONES (Esta garantía no cubre) ---
-                checkPage(10);
+                checkPage(20);
                 doc.setFont("helvetica", "bold");
                 doc.text("Esta garantía no cubre:", 14, y); y += 5;
                 doc.setFont("helvetica", "normal");
@@ -1424,48 +1958,426 @@
             document.getElementById('btnSearch').onclick = () => doSearch(i.value);
             i.addEventListener('keypress', e => { if (e.key === 'Enter') doSearch(i.value) });
         }
+
+        // --- EXCEL LATS PARSER ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const excelInput = document.getElementById('latsExcelInput');
+            if (excelInput) {
+                excelInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    try {
+                        const confirmMsg = "Aviso Importante:\n\nEl sistema escaneará el documento buscando tablas bajo el título 'Model Selection - Summary'.\n\nEs OBLIGACIÓN EXCLUSIVA DEL USUARIO verificar manualmente que el resultado extraído corresponda a lo diseñado y que no hayan faltado equipos que vinieran fuera de ese nivel.\n\n¿Deseas continuar y extraer los equipos?";
+                        if (!confirm(confirmMsg)) {
+                            e.target.value = '';
+                            return;
+                        }
+
+                        const btnText = e.target.nextElementSibling || e.target.parentElement.querySelector('button');
+                        const originalBtnHtml = btnText.innerHTML;
+                        btnText.innerHTML = "<span>⏳</span> Procesando...";
+
+                        const data = await file.arrayBuffer();
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        let foundItemsMap = new Map();
+
+                        for (const sheetName of workbook.SheetNames) {
+                            const lowerSheetName = String(sheetName).toLowerCase();
+                            // Evitamos procesar hojas que son resúmenes globales que duplican la información
+                            if (lowerSheetName.includes("proposal") || lowerSheetName.includes("pipe summary") || lowerSheetName.includes("control system") || lowerSheetName.includes("wiring")) {
+                                continue;
+                            }
+
+                            const worksheet = workbook.Sheets[sheetName];
+                            const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                            let hasSummaryTitle = false;
+                            for (let i = 0; i < Math.min(json.length, 30); i++) {
+                                const rowStrInner = (json[i] ? json[i].map(String).join(' ') : "").toLowerCase();
+                                if (rowStrInner.includes("model selection - summary") || rowStrInner.includes("model selection summary")) {
+                                    hasSummaryTitle = true;
+                                    break;
+                                }
+                            }
+
+                            if (!hasSummaryTitle) continue;
+
+                            let readingTable = false;
+                            let modelColIdx = -1;
+                            let qtyColIdx = -1;
+                            let lastValidTitleRow = false;
+                            let inSummarySection = false;
+                            let seenSectionTitles = new Set();
+
+                            for (let i = 0; i < json.length; i++) {
+                                const row = json[i];
+                                if (!row || row.length === 0) {
+                                    readingTable = false;
+                                    continue;
+                                }
+
+                                const hasData = row.some(c => c !== null && c !== undefined && String(c).trim().length > 0);
+                                if (!hasData) {
+                                    readingTable = false;
+                                    continue;
+                                }
+
+                                const rowStrInner = JSON.stringify(row).toLowerCase();
+
+                                if (readingTable && rowStrInner.includes('total') && !rowStrInner.includes('model')) {
+                                    readingTable = false;
+                                    continue;
+                                }
+
+                                if (rowStrInner.includes('model name') && (rowStrInner.includes('quantity') || rowStrInner.includes('qty'))) {
+                                    modelColIdx = row.findIndex(c => c && String(c).toLowerCase().trim() === 'model name');
+                                    qtyColIdx = row.findIndex(c => {
+                                        if (!c) return false;
+                                        const s = String(c).toLowerCase().trim();
+                                        return s === 'quantity' || s === 'qty';
+                                    });
+                                    if (modelColIdx > -1 && qtyColIdx > -1) {
+                                        // SOLO leemos si venimos de un título numérico validado dentro del Summary
+                                        readingTable = lastValidTitleRow;
+                                    }
+                                    continue;
+                                }
+
+                                if (readingTable) {
+                                    const rawModel = row[modelColIdx];
+                                    const rawQty = row[qtyColIdx];
+
+                                    if (rawModel) {
+                                        const modelStr = String(rawModel).trim();
+                                        const qtyNum = parseInt(rawQty);
+
+                                        if (modelStr && !isNaN(qtyNum) && qtyNum > 0) {
+                                            foundItemsMap.set(modelStr, (foundItemsMap.get(modelStr) || 0) + qtyNum);
+                                        }
+                                    }
+                                } else {
+                                    // Controladores de Sección y Títulos
+                                    let firstStr = row.find(c => c && typeof c === 'string' && c.trim().length > 0);
+                                    if (firstStr) {
+                                        firstStr = firstStr.trim();
+                                        const fsLower = firstStr.toLowerCase();
+
+                                        if (fsLower.includes("model selection - summary") || fsLower.includes("model selection summary")) {
+                                            inSummarySection = true;
+                                            lastValidTitleRow = false;
+                                        }
+                                        else if (fsLower.includes("equipment list") || fsLower.includes("piping material") || fsLower === "control system" || fsLower.includes("wiring diagram") || fsLower.includes("schematic")) {
+                                            // Terminó el resumen global. Cortamos lectura del resto de la hoja, porque LATS repetirá las tablas debajo
+                                            break;
+                                        }
+
+                                        if (inSummarySection) {
+                                            if (!fsLower.includes("date:") && !fsLower.includes("project_") && !fsLower.includes("lg") && !fsLower.includes("model selection")) {
+                                                if (/^\d+\.\s/.test(firstStr)) {
+                                                    if (seenSectionTitles.has(fsLower)) {
+                                                        // Título repetido (ej: "1. Outdoor Units" en el desglose por Sistemas). Frena la hoja completa.
+                                                        break;
+                                                    }
+                                                    seenSectionTitles.add(fsLower);
+                                                    lastValidTitleRow = true;
+                                                } else if (firstStr.length > 3) {
+                                                    lastValidTitleRow = false;
+                                                }
+                                            }
+                                        } else {
+                                            lastValidTitleRow = false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (foundItemsMap.size === 0) {
+                            btnText.innerHTML = originalBtnHtml;
+                            e.target.value = '';
+                            return alert("No se encontraron equipos bajo el título 'Model Selection - Summary' con cantidades > 0.");
+                        }
+
+                        const modelsToSearch = Array.from(foundItemsMap.keys());
+                        const { data: dbProducts } = await db.from('products').select('*').in('model_short', modelsToSearch);
+
+                        const dbProdMap = new Map();
+                        if (dbProducts) {
+                            dbProducts.forEach(p => {
+                                if (!dbProdMap.has(p.model_short) || (p.category && !dbProdMap.get(p.model_short).category)) {
+                                    dbProdMap.set(p.model_short, p);
+                                }
+                            });
+                        }
+
+                        let addedCount = 0;
+                        let missingModels = [];
+
+                        for (const [mName, mQty] of foundItemsMap.entries()) {
+                            if (dbProdMap.has(mName)) {
+                                const p = dbProdMap.get(mName);
+                                const d = myDiscounts[p.category] || 0;
+                                let cost = isAdmin ? findCostForProduct(p) : 0;
+
+                                let existingIdx = quoteItems.findIndex(qi => qi.product.model_short === mName);
+                                if (existingIdx > -1) {
+                                    quoteItems[existingIdx].qty += mQty;
+                                } else {
+                                    quoteItems.push({ product: p, qty: mQty, disc: d, net: p.list_price * ((100 - d) / 100), delivery_date: '', cost: cost });
+                                }
+                                addedCount++;
+                            } else {
+                                missingModels.push(mName);
+                            }
+                        }
+
+                        quoteItems.forEach((x, idx) => recalc(idx, false));
+                        render();
+
+                        btnText.innerHTML = originalBtnHtml;
+                        e.target.value = '';
+
+                        let alertResult = `✅ Archivo procesado.\n- ${addedCount} modelos añadidos o actualizados con éxito.`;
+                        if (missingModels.length > 0) {
+                            alertResult += `\n\n⚠️ Los siguientes modelos fueron IGNORADOS porque no existen en la base de datos o difieren:\n- ${missingModels.join('\n- ')}`;
+                        }
+                        alertResult += `\n\n📌 Recuerda verificar la cotización para asegurarte de que están todos los ítems y las cantidades correctas.`;
+                        alert(alertResult);
+
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error al procesar el Excel: " + err.message);
+                        e.target.nextElementSibling.innerHTML = "<span>📄</span> Cargar LATS (Excel)";
+                        e.target.value = '';
+                    }
+                });
+            }
+        });
         // Call setupSearch when the DOM is ready, or at the end of the script
         // setupSearch(); // Uncomment if you want to call it here
 
         async function doSearch(v) {
             v = v.trim(); const d = document.getElementById('searchResults');
             if (v.length < 2) { d.style.display = 'none'; return; }
-            const { data: p } = await db.from('products').select('*').or(`model_suffix.ilike.%${v}%,model_short.ilike.%${v}%`).limit(10);
+            const { data: p } = await db.from('products').select('*').or(`model_suffix.ilike.%${v}%,model_short.ilike.%${v}%`).limit(20);
             d.innerHTML = ''; d.style.display = 'block';
-            if (p && p.length) p.forEach(x => { let e = document.createElement('div'); e.className = 'result-item'; e.textContent = x.model_short; e.onclick = () => { window.addItem(x) }; d.appendChild(e) });
-            else d.innerHTML = '<div style="padding:10px">Sin resultados</div>';
+
+            if (p && p.length) {
+                // Deduplicar por model_short. Priorizar los que sí tengan categoría para que los descuentos apliquen correctamente
+                const uniqueProductsMap = new Map();
+                p.forEach(x => {
+                    if (!x.model_short) return;
+                    // Si ya existe y el que estamos viendo NO tiene categoria, no lo pisamos
+                    if (uniqueProductsMap.has(x.model_short)) {
+                        const es = uniqueProductsMap.get(x.model_short);
+                        if (es.category && !x.category) return; // Mantenemos el que tiene categoria
+                    }
+                    uniqueProductsMap.set(x.model_short, x);
+                });
+
+                const uniqueProducts = Array.from(uniqueProductsMap.values()).slice(0, 10);
+
+                uniqueProducts.forEach(x => {
+                    let e = document.createElement('div');
+                    e.className = 'result-item';
+                    e.textContent = x.model_short;
+                    e.onclick = () => { window.addItem(x) };
+                    d.appendChild(e)
+                });
+            } else {
+                d.innerHTML = '<div style="padding:10px">Sin resultados</div>';
+            }
         }
-        window.addItem = (p) => {
+        window.onClientChange = async (clientId, skipRecalc = false) => {
+            if (!isAdmin) return; // Distributors use their own static matrix
+
+            myDiscounts = {}; // Reset baseline
+            if (clientId) {
+                try {
+                    // Look up by exact company name since datasetDistId is a profile UUID not a matrix company UUID
+                    let compId = null;
+                    const { data: c } = await db.from('clients').select('company_name').eq('id', clientId).single();
+                    if (c) {
+                        const { data: comp } = await db.from('companies').select('id').ilike('name', c.company_name).limit(1);
+                        if (comp && comp.length > 0) compId = comp[0].id;
+                    }
+
+                    if (compId) {
+                        const { data: dData } = await db.from('distributor_discounts').select('*').eq('distributor_id', compId);
+                        if (dData) dData.forEach(dd => myDiscounts[dd.category] = dd.discount_percent);
+                    }
+                } catch (e) {
+                    console.warn("Could not load dynamic matrix", e);
+                }
+            }
+
+            // Recalculate existing quote items unless flag is true
+            if (!skipRecalc && quoteItems.length > 0) {
+                quoteItems.forEach((x, i) => {
+                    x.disc = myDiscounts[x.product.category] || 0;
+                    x.net = x.product.list_price * ((100 - x.disc) / 100);
+                });
+                render();
+            }
+        };
+
+        window.checkStock = async (modelShort) => {
+            try {
+                // Buscamos si hay un modelo en inventory que empiece con el model_short
+                const { data: lgData, error: lgError } = await db.from('inventory')
+                    .select('*')
+                    .ilike('model_suffix', `${modelShort}%`);
+
+                if (lgError) throw lgError;
+
+                let lgTotal = 0, lgW1 = 0, lgW2 = 0, lgW3 = 0, lgW4 = 0, lgW5 = 0;
+                if (lgData && lgData.length > 0) {
+                    lgData.forEach(r => {
+                        lgTotal += r.stock || 0;
+                        lgW1 += r.week_1 || 0; lgW2 += r.week_2 || 0; lgW3 += r.week_3 || 0; lgW4 += r.week_4 || 0; lgW5 += r.week_5 || 0;
+                    });
+                }
+
+                let distTotal = 0, distW1 = 0, distW2 = 0, distW3 = 0, distW4 = 0, distW5 = 0;
+                let isDistributor = false;
+
+                if (!isAdmin && myDistributorId) {
+                    isDistributor = true;
+                    const { data: distData } = await db.from('distributor_inventory')
+                        .select('*')
+                        .eq('distributor_id', myDistributorId)
+                        .ilike('model_suffix', `${modelShort}%`);
+
+                    if (distData && distData.length > 0) {
+                        distData.forEach(r => {
+                            distTotal += r.stock || 0;
+                            distW1 += r.week_1 || 0; distW2 += r.week_2 || 0; distW3 += r.week_3 || 0; distW4 += r.week_4 || 0; distW5 += r.week_5 || 0;
+                        });
+                    }
+                }
+
+                let alertMsg = `📦 ESTADO DE INVENTARIO: ${modelShort}...\n\n`;
+
+                const udStr = (qty) => qty === 1 ? 'unidad' : 'unidades';
+                const verbArribarCap = (qty) => qty === 1 ? 'Arriba' : 'Arriban';
+
+                const buildStatusText = (totalStock, tW1, tW2, tW3, tW4, tW5) => {
+                    let transito = tW1 + tW2 + tW3 + tW4 + tW5;
+                    let dispStr = totalStock > 0
+                        ? `${totalStock} ${udStr(totalStock)} disponible(s) para entrega inmediata.`
+                        : `0 unidades Locales.`;
+
+                    if (transito > 0) {
+                        let semanas = tW5 > 0 ? 5 : tW4 > 0 ? 4 : tW3 > 0 ? 3 : tW2 > 0 ? 2 : tW1 > 0 ? 1 : 0;
+                        dispStr += `\n   ↳ ${verbArribarCap(transito)} ${transito} ${udStr(transito)} en hasta +${semanas} semana(s).`;
+                    } else if (totalStock === 0) {
+                        dispStr += ` Sin tránsito programado.`;
+                    }
+                    return dispStr;
+                };
+
+                if (isDistributor) {
+                    alertMsg += `=== INVENTARIO PROPIO ===\n${buildStatusText(distTotal, distW1, distW2, distW3, distW4, distW5)}\n\n`;
+                }
+
+                alertMsg += `=== INVENTARIO LG ===\n${buildStatusText(lgTotal, lgW1, lgW2, lgW3, lgW4, lgW5)}`;
+
+                alert(alertMsg);
+
+            } catch (err) {
+                console.error("Error checking stock:", err);
+                alert("Error al revisar stock: " + err.message);
+            }
+        };
+
+        window.addItem = async (p) => {
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('productSearch').value = '';
-            const d = isAdmin ? 0 : (myDiscounts[p.category] || 0);
-            quoteItems.push({ product: p, qty: 1, disc: d, net: 0, delivery_date: '' });
+
+            const d = myDiscounts[p.category] || 0;
+            let cost = isAdmin ? findCostForProduct(p) : 0;
+
+            quoteItems.push({ product: p, qty: 1, disc: d, net: 0, delivery_date: '', cost: cost });
             recalc(quoteItems.length - 1);
         }
         window.updateDisc = (i, v) => { quoteItems[i].disc = parseFloat(v) || 0; recalc(i); }
         window.updateQty = (i, v) => { quoteItems[i].qty = parseInt(v) || 1; recalc(i); }
         window.updateDate = (i, v) => { quoteItems[i].delivery_date = v; }
         window.removeItem = (i) => { quoteItems.splice(i, 1); render(); }
-        function recalc(i) { const x = quoteItems[i]; x.net = x.product.list_price * ((100 - x.disc) / 100); render(); }
+        // recalc now accepts optional render toggle for performance during batch operations
+        function recalc(i, shouldRender = true) { const x = quoteItems[i]; x.net = x.product.list_price * ((100 - x.disc) / 100); if (shouldRender) render(); }
         // Helper for currency
         const fmt = (num) => {
             return '$' + parseFloat(num || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
         function render() {
+            // Rename headers for distributors
+            const thListPrice = document.getElementById('thListPriceHeader');
+            const thDesc = document.getElementById('thDescHeader');
+            if (thListPrice) thListPrice.textContent = isAdmin ? 'Precio Lista (USD)' : 'Unitary Price (USD)';
+            if (thDesc) thDesc.textContent = isAdmin ? 'Desc %' : 'Extra Desc %';
+
             const tb = document.querySelector('#quoteTable tbody');
             tb.innerHTML = '';
             let t = 0;
+            let totalCostLanded = 0;
 
             quoteItems.forEach((x, i) => {
                 t += x.net * x.qty;
+                const cost = x.cost || 0; // The unit cost loaded via RPC for admins
+                totalCostLanded += (cost * x.qty);
+
+                let profitPct = 0;
+                let profitColor = "#666";
+                if (x.net > 0 && cost > 0) {
+                    profitPct = ((x.net - cost) / x.net) * 100;
+                    if (profitPct < 15) profitColor = "#ff4d4f"; // Red if low margin
+                    else if (profitPct > 35) profitColor = "#28a745"; // Green if good margin
+                    else profitColor = "#faad14"; // Orange if average
+                }
+
+                const profitDisplay = (cost > 0) ? `<span style="color:${profitColor}; font-weight:bold">${profitPct.toFixed(1)}%</span>` : '<span style="color:#aaa">N/A</span>';
+                const costDisplay = (cost > 0) ? fmt(cost) : '<span style="color:#aaa">-</span>';
+
                 const tr = document.createElement('tr');
 
                 // Input styles for better UI
                 const inputStyle = "width:100%; padding:5px; border:1px solid #ddd; border-radius:4px;";
 
+                let priceToDisplay = x.product.list_price;
+                let discDisplay = isAdmin
+                    ? `<input type="number" step="0.1" min="0" max="100" value="${x.disc.toFixed(1)}" style="${inputStyle} width:70px; text-align:center; color:#A50034; font-weight:bold;" onchange="window.updateDisc(${i}, this.value)">`
+                    : `${x.disc.toFixed(1)}%`;
+
+                // Hide base logic for distributor and show Unitary Price instead
+                if (!isAdmin && typeof myDiscounts !== 'undefined' && myDiscounts[x.product.category] !== undefined) {
+                    const baseDisc = myDiscounts[x.product.category];
+
+                    // Display list price with base discount applied
+                    priceToDisplay = x.product.list_price * ((100 - baseDisc) / 100);
+
+                    if (x.disc > baseDisc + 0.01) {
+                        const extraDisc = 100 * (1 - ((100 - x.disc) / (100 - baseDisc)));
+                        discDisplay = `
+                            <div style="color:#A50034; font-weight:bold; background:#ffe8ec; padding:2px 4px; border-radius:4px; display:inline-block;" title="Descuento Extra Aprobado">+${extraDisc.toFixed(1)}%</div>
+                        `;
+                    } else {
+                        discDisplay = `<span style="color:#ccc;">-</span>`;
+                    }
+                }
+
                 tr.innerHTML = `
-                <td style="font-weight:500">${x.product.model_short}</td>
+                <td style="font-weight:500">
+                    <div style="margin-bottom:6px;">${x.product.model_short}</div>
+                    <button type="button" onclick="window.checkStock('${x.product.model_short}')" 
+                        style="font-size:0.75em; background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd; border-radius:4px; padding:3px 8px; cursor:pointer; font-weight:600; display:flex; align-items:center; gap:4px; transition:0.2s;"
+                        onmouseover="this.style.background='#bae6fd'" onmouseout="this.style.background='#e0f2fe'">
+                        📦 Verificar Stock
+                    </button>
+                </td>
                 <td style="max-width:200px;">
                     <div style="font-size:0.85em; color:#666; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; line-height: 1.2em; height: 2.4em;">
                         ${x.product.description || '--'}
@@ -1480,13 +2392,16 @@
                            placeholder="YYYY-MM-DD">
                 </td>
                 
-                <td style="text-align:right;">${fmt(x.product.list_price)}</td>
+                <td style="text-align:right;">${fmt(priceToDisplay)}</td>
                 
                 <td style="width:70px; text-align:center; background-color:#f9f9f9; color:#666;">
-                    ${x.disc}%
+                    ${discDisplay}
                 </td>
                 
                 <td style="text-align:right; font-weight:600;">${fmt(x.net)}</td>
+                
+                <td class="admin-column" style="display:${isAdmin ? 'table-cell' : 'none'}; text-align:right; font-size:0.9em; color:#666; background:#fef0f0; border-left:2px solid !important; border-color:#fff !important;">${costDisplay}</td>
+                <td class="admin-column" style="display:${isAdmin ? 'table-cell' : 'none'}; text-align:right; background:#fef0f0;">${profitDisplay}</td>
                 
                 <td style="width:70px">
                     <input type="number" value="${x.qty}" 
@@ -1504,6 +2419,80 @@
                 tb.appendChild(tr);
             });
             document.getElementById('grandTotal').textContent = fmt(t);
+
+            if (isAdmin) {
+                const grandProfitSpan = document.getElementById('grandProfit');
+
+                // Fetch the requested discount from the form if it exists
+                const reqDiscountInput = document.getElementById('requestedDiscountPct');
+                const reqDiscount = reqDiscountInput ? parseFloat(reqDiscountInput.value || 0) : 0;
+
+                let isReviewingDiscount = reqDiscount > 0;
+
+                if (t > 0 && totalCostLanded > 0) {
+                    const totalProfitPct = ((t - totalCostLanded) / t) * 100;
+                    let color = totalProfitPct > 30 ? "#28a745" : (totalProfitPct < 15 ? "#ff4d4f" : "#faad14");
+
+                    let htmlStr = `Consolidated Margin: <span style="color:${color}; font-weight:bold">${totalProfitPct.toFixed(2)}%</span> (Total Cost: ${fmt(totalCostLanded)}) &nbsp;|&nbsp; `;
+
+                    // Add projection if reviewing
+                    if (isReviewingDiscount) {
+                        // Project the new net
+                        let totalProjectedNet = 0;
+                        quoteItems.forEach(x => {
+                            // Extra discount means it is applied ON TOP of the already discounted net price.
+                            // e.g. $53,045 * 0.7 = $37,132
+                            const projectedNetLine = x.net * ((100 - reqDiscount) / 100);
+                            totalProjectedNet += (projectedNetLine * x.qty);
+                        });
+
+                        const projectedProfitPct = totalProjectedNet > 0 ? ((totalProjectedNet - totalCostLanded) / totalProjectedNet) * 100 : 0;
+                        let projColor = projectedProfitPct > 30 ? "#28a745" : (projectedProfitPct < 15 ? "#ff4d4f" : "#faad14");
+
+                        htmlStr += `<br><div style="font-size:0.95em; background:#f8f9fa; padding:10px 15px; border-radius:6px; color:#495057; display:inline-block; margin-top:10px; border:1px solid #dee2e6; border-left:4px solid #0d6efd; text-align:left; min-width:300px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-weight:600; font-size:1.05em; color:#212529; margin-bottom:5px; border-bottom:1px solid #e9ecef; padding-bottom:5px;">
+                                Projected Financials (${reqDiscount}% Extra)
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                                <span>New Net Total:</span>
+                                <strong>${fmt(totalProjectedNet)}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span>New Margin:</span>
+                                <strong style="color:${projColor};">${projectedProfitPct.toFixed(2)}%</strong>
+                            </div>
+                        </div>`;
+                    }
+
+                    grandProfitSpan.innerHTML = htmlStr;
+                } else {
+                    grandProfitSpan.innerHTML = `Consolidated Margin: <span style="color:#aaa">-</span> &nbsp;|&nbsp; `;
+                }
+            } else {
+                // For Distributors: Projection view if they are asking for an extra discount
+                const reqDiscountInput = document.getElementById('requestedDiscountPct');
+                const reqDiscount = reqDiscountInput ? parseFloat(reqDiscountInput.value || 0) : 0;
+
+                // Clear any previous generic projection
+                const existingProj = document.getElementById('distributorProjection');
+                if (existingProj) existingProj.remove();
+
+                if (reqDiscount > 0 && t > 0) {
+                    let totalProjectedNet = 0;
+                    quoteItems.forEach(x => {
+                        const projectedNetLine = x.net * ((100 - reqDiscount) / 100);
+                        totalProjectedNet += (projectedNetLine * x.qty);
+                    });
+
+                    const grandTotalElement = document.getElementById('grandTotal').parentNode;
+                    const projectionContainer = document.createElement('div');
+                    projectionContainer.id = 'distributorProjection';
+                    projectionContainer.style = 'margin-top:10px; font-size:1.05rem; color:#495057; background:#f8f9fa; padding:10px 15px; border-radius:6px; display:inline-block; border:1px solid #dee2e6; border-left:4px solid #6c757d; font-weight:normal; text-align:right; box-shadow:0 2px 4px rgba(0,0,0,0.02);';
+                    projectionContainer.innerHTML = `<span style="color:#6c757d; font-size:0.9em;">Pending Approval (Simulated ${reqDiscount}% Extra)</span><br><strong>Est. New Total: ${fmt(totalProjectedNet)}</strong>`;
+
+                    grandTotalElement.appendChild(projectionContainer);
+                }
+            }
         }
 
         // New Feature: Fill Dates
@@ -1554,6 +2543,18 @@
                 let currentStage = document.getElementById('quoteStage').value;
                 let lossReason = null;
 
+                // Discount Request Logic
+                if (!isAdmin && document.getElementById('chkRequestDiscount')?.checked) {
+                    const reqPct = document.getElementById('requestedDiscountPct').value;
+                    const reqJust = document.getElementById('discountJustification').value.trim();
+                    if (!reqPct || !reqJust) {
+                        alert("Para solicitar un descuento adicional, debe llenar el porcentaje y la justificación obligatoriamente.");
+                        btn.textContent = "Solicitar Aprobación de Descuento"; btn.disabled = false;
+                        return;
+                    }
+                    currentStage = 'Discount_Pending';
+                }
+
                 // INTERCEPT LOST STATUS FOR NON-ADMINS
                 if (currentStage === 'Lost' && !isAdmin) {
                     if (!confirm("Marcar una oportunidad como 'Lost' (Perdida) requiere aprobación del administrador. \n\n¿Desea enviar la solicitud de baja ahora?")) {
@@ -1570,15 +2571,16 @@
                 }
 
                 const qData = {
-                    user_id: currentUser.id, distributor_id: myDistributorId,
                     project_name: projectName,
                     client_id: clientId,
                     quote_code: document.getElementById('quoteCode').value,
                     award_date: awardDateVal, total_net_price: tot, status: 'draft',
                     stage: currentStage,
                     loss_reason: lossReason, // Add loss reason if applicable
-                    requested_by: currentUser.id, // Ensure requester is tracked
+                    requested_discount_pct: document.getElementById('requestedDiscountPct')?.value || 0,
+                    discount_justification: document.getElementById('discountJustification')?.value || null,
                     consultant_id: document.getElementById('consultantSelect').value || null,
+                    vertical_market: document.getElementById('verticalMarketSelect').value,
                     is_spec_in: document.getElementById('chkSpecIn').checked,
                     is_retrofit: document.getElementById('chkRetrofit').checked,
                     // Duplicated fields removed
@@ -1594,6 +2596,10 @@
                     await db.from('quote_items').delete().eq('quote_id', qId);
                 } else {
                     // Insert
+                    qData.user_id = currentUser.id;
+                    qData.distributor_id = myDistributorId;
+                    qData.requested_by = currentUser.id;
+
                     const { data: q, error: ie } = await db.from('quotes').insert([qData]).select().single();
                     if (ie) throw ie;
                     qId = q.id;

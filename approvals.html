@@ -299,6 +299,7 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
@@ -331,7 +332,7 @@
                 </div>
 
                 <div class="list-header">
-                    <h3>Solicitudes Pendientes de Baja</h3>
+                    <h3>Solicitudes Pendientes (Bajas y Descuentos)</h3>
                 </div>
                 <div class="quote-table-container">
                     <table class="quote-table" id="listTable">
@@ -340,9 +341,9 @@
                                 <th>Proyecto</th>
                                 <th>Código</th>
                                 <th>Cliente</th>
-                                <th>Etapa</th>
+                                <th>Tipo de Solicitud</th>
                                 <th>Solicitante</th>
-                                <th style="width: 25%;">Razón de Baja</th>
+                                <th style="width: 25%;">Detalle / Justificación</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -413,9 +414,21 @@
         function renderActionButtons(q) {
             // Only Admin can approve/reject
             if (isAdmin) {
+                if (q.stage === 'Discount_Pending') {
+                    return `
+                        <div style="display:flex; gap:5px; flex-direction:column;">
+                            <button onclick="event.stopPropagation(); window.open('quotes.html?edit=${q.id}', '_blank')" title="Ir a Cotizaciones a revisar profit / editar" style="background:#0d6efd; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; width:100%;">🔍 Revisar Rentabilidad (Profit)</button>
+                            <div style="display:flex; gap:5px;">
+                                <button onclick="event.stopPropagation(); approveDiscount('${q.id}')" title="Aprobar (Devuelve a Registration)" style="background:#28a745; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; flex:1;">✓ Aprobar</button>
+                                <button onclick="event.stopPropagation(); rejectDiscount('${q.id}')" title="Rechazar" style="background:#6c757d; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer; flex:1;">✕ Rechazar</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div style="display:inline-flex; gap:5px;">
-                        <button onclick="event.stopPropagation(); approveDelete('${q.id}', '${q.stage}')" title="Aprobar" style="background:#28a745; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;">✓ Aprobar</button>
+                        <button onclick="event.stopPropagation(); approveDelete('${q.id}', '${q.stage}')" title="Aprobar" style="background:#28a745; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;">✓ Aprobar Baja</button>
                         <button onclick="event.stopPropagation(); rejectDelete('${q.id}')" title="Rechazar" style="background:#6c757d; color:white; border:none; border-radius:4px; padding:6px 12px; cursor:pointer;">✕ Rechazar</button>
                     </div>
                 `;
@@ -478,11 +491,29 @@
 
         window.rejectDelete = async (id) => {
             if (!confirm("¿Rechazar solicitud y devolver a 'Registration'?")) return;
-            // Revert to Registration (or maybe keep existing, but simplified logic per request)
+            // Revert to Registration
             const { error } = await db.from('quotes').update({
                 stage: 'Registration'
             }).eq('id', id);
 
+            if (error) alert("Error: " + error.message);
+            else loadRecentQuotes();
+        };
+
+        window.approveDiscount = async (id) => {
+            if (!confirm("Al aprobar, la cotización volverá a estado 'Registration'.\n\nRecuerde que debe ir usted a 'Cotizaciones', abrirla y asignarle el descuento extra manualmente en las líneas de productos.\n\n¿Continuar?")) return;
+            const { error } = await db.from('quotes').update({ stage: 'Registration' }).eq('id', id);
+            if (error) alert("Error: " + error.message);
+            else loadRecentQuotes();
+        };
+
+        window.rejectDiscount = async (id) => {
+            if (!confirm("¿Rechazar solicitud de descuento y devolver a 'Registration'?")) return;
+            const { error } = await db.from('quotes').update({
+                stage: 'Registration',
+                requested_discount_pct: 0,
+                discount_justification: null
+            }).eq('id', id);
             if (error) alert("Error: " + error.message);
             else loadRecentQuotes();
         };
@@ -495,6 +526,11 @@
                 }
                 db = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+                const { data: { user } } = await db.auth.getUser();
+                if (!user) {
+                    window.location.href = 'CRM/index.html';
+                    return;
+                }
                 currentUser = user;
 
                 await loadProfileData();
@@ -521,7 +557,7 @@
             const badge = document.getElementById('distributorName');
 
             // Hardcoded check for super admin
-            if (currentUser.email === 'admin@lge.com') {
+            if (currentUser.email === 'sergio.baezv@usach.cl') {
                 isAdmin = true;
                 myDistributorId = null;
                 badge.textContent = "ADMINISTRADOR (VISTA GLOBAL)";
@@ -588,15 +624,25 @@
                 // Removed edit click for this view to avoid accidental edits during approval
 
                 const requesterName = usersMap[q.requested_by] || 'Desconocido';
-                const lossReason = q.loss_reason || 'Sin razón especificada';
+
+                let detailsHTML = `<td style="font-style:italic; color:#555;">"${q.loss_reason || 'Sin razón especificada'}"</td>`;
+                let stageName = `<span class="badge-stage ${q.stage?.toLowerCase().replace('/', '-') || 'registration'}">${q.stage?.replace('_', ' ') || 'Registration'}</span>`;
+
+                if (q.stage === 'Discount_Pending') {
+                    stageName = `<span class="badge-stage" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba;">Solicitud Descuento</span>`;
+                    detailsHTML = `<td>
+                        <div><strong>Solicita:</strong> <span style="color:#A50034; font-weight:bold;">${q.requested_discount_pct || 0}% extra</span></div>
+                        <div style="font-style:italic; font-size:0.85em; color:#555; margin-top:4px;">"${q.discount_justification || 'Sin justificación'}"</div>
+                    </td>`;
+                }
 
                 tr.innerHTML = `
                     <td><strong>${q.project_name || '-'}</strong></td>
                     <td>${q.quote_code || '---'}</td>
                     <td>${clientsMap[q.client_id] || '-'}</td>
-                    <td><span class="badge-stage ${q.stage?.toLowerCase().replace('/', '-') || 'registration'}">${q.stage?.replace('_', ' ') || 'Registration'}</span></td>
+                    <td>${stageName}</td>
                     <td>${requesterName}</td>
-                    <td style="font-style:italic; color:#555;">"${lossReason}"</td>
+                    ${detailsHTML}
                     <td>
                         ${renderActionButtons(q)}
                     </td>
@@ -606,10 +652,10 @@
         }
 
         async function loadRecentQuotes() {
-            // Fetch both Delete_Pending AND Lost_Pending
+            // Fetch both Delete_Pending, Lost_Pending, AND Discount_Pending
             let q = db.from('quotes').select(
-                'id, project_name, quote_code, client_id, stage, requested_by, loss_reason, created_at, distributor_id'
-            ).in('stage', ['Delete_Pending', 'Lost_Pending']).order('created_at', { ascending: false });
+                'id, project_name, quote_code, client_id, stage, requested_by, loss_reason, requested_discount_pct, discount_justification, created_at, distributor_id'
+            ).in('stage', ['Delete_Pending', 'Lost_Pending', 'Discount_Pending']).order('created_at', { ascending: false });
 
             // If user is admin (or specifically Sergio), show everything. If regular user, filter by distributor.
             // Temporarily allowing global view for testing if distributor_id is null
@@ -810,7 +856,10 @@
 
         // PDF Generation
         window.generatePDF = async (id) => {
-            const deliveryDate = prompt("Ingrese la Fecha Estimada de Entrega (ej. 2026-04-29):", new Date().toISOString().split('T')[0]);
+            let defaultDate = new Date();
+            defaultDate.setDate(defaultDate.getDate() + 90);
+            const defaultDateStr = defaultDate.toISOString().split('T')[0];
+            const deliveryDate = prompt("Ingrese la Fecha Estimada de Entrega (ej. 2026-04-29):", defaultDateStr);
             if (deliveryDate === null) return; // Cancelled
 
             try {
@@ -947,9 +996,9 @@
                     startY: 90,
                     head: [['Modelo', 'Descripcion', 'Cantidad', 'P.Unit', 'Total']],
                     body: tableBody,
-                    theme: 'plain',
-                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
-                    styles: { fontSize: 9, cellPadding: 2, valign: 'middle' },
+                    theme: 'grid',
+                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold', lineColor: [0, 0, 0] },
+                    styles: { fontSize: 9, cellPadding: 3, valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.1 },
                     columnStyles: {
                         0: { cellWidth: 35 },
                         1: { cellWidth: 'auto' },
@@ -957,7 +1006,7 @@
                         3: { cellWidth: 25, halign: 'right' },
                         4: { cellWidth: 25, halign: 'right' }
                     },
-                    margin: { right: 14, left: 14 }
+                    margin: { top: 35, right: 14, left: 14 }
                 });
 
                 // Total
