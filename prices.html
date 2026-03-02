@@ -109,6 +109,34 @@
             <!-- Content: Global List -->
             <div id="tab-global" class="tab-content active">
                 <div class="card">
+                    <div class="filter-header"
+                        style="margin-bottom:20px; display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:250px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:600; color:#495057;">Buscar
+                                Código de Modelo</label>
+                            <input type="text" id="globalProductSearch" placeholder="Escribir código (Ej: ARNU...)"
+                                style="width:100%; padding:10px; border:1px solid #ced4da; border-radius:6px;"
+                                oninput="window.filterProducts()">
+                        </div>
+                        <div style="flex:1; min-width:200px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:600; color:#495057;">Filtrar
+                                Categoría</label>
+                            <select id="globalCategorySearch"
+                                style="width:100%; padding:10px; border:1px solid #ced4da; border-radius:6px;"
+                                onchange="window.filterProducts()">
+                                <option value="ALL">Todas las Categorías</option>
+                                <option value="ACS">ACS</option>
+                                <option value="AWHP">AWHP</option>
+                                <option value="FCU">FCU</option>
+                                <option value="Multi V">Multi V</option>
+                                <option value="MultiSplit">MultiSplit</option>
+                                <option value="Rooftop">Rooftop</option>
+                                <option value="SCAC">SCAC</option>
+                                <option value="Screw">Screw</option>
+                                <option value="Scroll">Scroll</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="table-container">
                         <table id="productsTable">
                             <thead>
@@ -352,10 +380,10 @@
 
                     tbody.innerHTML = data.map(p => {
                         const price = p.list_price !== undefined ? p.list_price : 0;
-                        return `<tr>
-                            <td>${p.model_suffix || '-'}</td>
+                        return `<tr class="product-row">
+                            <td class="product-model-col" style="font-weight:bold;">${p.model_suffix || '-'}</td>
                             <td>$${(parseFloat(price) || 0).toLocaleString()}</td>
-                            <td>${p.category || '-'}</td>
+                            <td class="product-cat-col">${p.category || '-'}</td>
                             <td><button class="btn-secondary-sm">Edit</button></td>
                         </tr>`;
                     }).join('');
@@ -363,6 +391,39 @@
                     console.error("Load Products Error:", err);
                     tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error: ${err.message}</td></tr>`;
                 }
+            };
+
+            window.filterProducts = function () {
+                let searchTxt = '';
+                const globalSearch = document.getElementById('globalProductSearch');
+                const topSearch = document.getElementById('productSearch');
+
+                if (globalSearch && document.activeElement === globalSearch) {
+                    searchTxt = globalSearch.value.toLowerCase();
+                    if (topSearch) topSearch.value = globalSearch.value;
+                } else if (topSearch && document.activeElement === topSearch) {
+                    searchTxt = topSearch.value.toLowerCase();
+                    if (globalSearch) globalSearch.value = topSearch.value;
+                } else {
+                    searchTxt = (globalSearch ? globalSearch.value : '').toLowerCase() || (topSearch ? topSearch.value : '').toLowerCase();
+                }
+
+                const filterCat = document.getElementById('globalCategorySearch') ? document.getElementById('globalCategorySearch').value : 'ALL';
+
+                const rows = document.querySelectorAll('#productsTable tbody tr.product-row');
+                rows.forEach(row => {
+                    const model = row.querySelector('.product-model-col').textContent.toLowerCase();
+                    const cat = row.querySelector('.product-cat-col').textContent;
+
+                    const matchesSearch = model.includes(searchTxt);
+                    const matchesCat = (filterCat === 'ALL') || (cat.toLowerCase() === filterCat.toLowerCase());
+
+                    if (matchesSearch && matchesCat) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
             };
 
             window.loadVariableCosts = async function () {
