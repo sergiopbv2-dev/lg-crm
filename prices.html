@@ -136,6 +136,16 @@
                                 <option value="Scroll">Scroll</option>
                             </select>
                         </div>
+                        <div style="display:flex; gap:10px; align-items:flex-end; padding-bottom:2px;">
+                            <button onclick="window.toggleAllVisibleProducts(true)"
+                                style="padding:10px 15px; background-color:#28a745; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; height: 42.5px;"
+                                title="Activa todos los productos actualmente visibles según el filtro">✔ Activar
+                                Todos</button>
+                            <button onclick="window.toggleAllVisibleProducts(false)"
+                                style="padding:10px 15px; background-color:#6c757d; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold; height: 42.5px;"
+                                title="Desactiva todos los productos actualmente visibles según el filtro">✖ Desactivar
+                                Todos</button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table id="productsTable">
@@ -387,7 +397,7 @@
                             <td>$${(parseFloat(price) || 0).toLocaleString()}</td>
                             <td class="product-cat-col">${p.category || '-'}</td>
                             <td style="text-align:center;">
-                                <input type="checkbox" onchange="window.toggleProductActive('${p.model_suffix}', this.checked)" ${isActive ? 'checked' : ''} style="width:20px;height:20px; accent-color:#A50034; cursor:pointer;" title="Desmarcar ocultará este producto en el cotizador">
+                                <input type="checkbox" onchange="window.toggleProductActive(this, '${p.model_suffix}', this.checked)" ${isActive ? 'checked' : ''} style="width:20px;height:20px; accent-color:#A50034; cursor:pointer;" title="Desmarcar ocultará este producto en el cotizador">
                             </td>
                             <td><button class="btn-secondary-sm" onclick="window.editProductPrice('${p.model_suffix}', ${price})">Edit</button></td>
                         </tr>`;
@@ -424,7 +434,7 @@
                 }
             };
 
-            window.toggleProductActive = async function (modelSuffix, isActive) {
+            window.toggleProductActive = async function (checkboxElement, modelSuffix, isActive) {
                 try {
                     const { error } = await client.from('products').update({ is_active: isActive }).eq('model_suffix', modelSuffix);
                     if (error) {
@@ -437,7 +447,7 @@
                         }
                     } else {
                         // Change row opacity for visual feedback
-                        const row = event.target.closest('tr');
+                        const row = checkboxElement.closest('tr');
                         if (row) {
                             if (isActive) {
                                 row.style.opacity = '1';
@@ -486,6 +496,75 @@
                         row.style.display = 'none';
                     }
                 });
+            };
+
+            window.toggleAllVisibleProducts = async function (isActive) {
+                const actionWord = isActive ? 'ACTIVAR' : 'DESACTIVAR';
+                if (!confirm(`¿Estás seguro de que quieres ${actionWord} masivamente todos los productos visibles en la tabla con tu filtro actual?`)) return;
+
+                const rows = document.querySelectorAll('#productsTable tbody tr.product-row');
+                const modelsToUpdate = [];
+                const checkboxesToUpdate = [];
+
+                rows.forEach(row => {
+                    // Solo actualizamos las filas que están visibles (es decir, las que cumplen el filtro)
+                    if (row.style.display !== 'none') {
+                        const model = row.querySelector('.product-model-col').textContent.trim();
+                        const checkbox = row.querySelector('input[type="checkbox"]');
+                        if (model && model !== '-') {
+                            // Validamos si ya está en el estado correcto para no mandar queries innecesarias
+                            if (checkbox && checkbox.checked !== isActive) {
+                                modelsToUpdate.push(model);
+                                checkboxesToUpdate.push({ row, checkbox });
+                            }
+                        }
+                    }
+                });
+
+                if (modelsToUpdate.length === 0) {
+                    alert(`Todos los productos visibles en pantalla ya están en el estado seleccionado.`);
+                    return;
+                }
+
+                try {
+                    document.body.style.cursor = 'wait';
+
+                    // Separar el arreglo en partes de a 50 modelos para no enviar URIs demasiado grandes a Supabase (PostgREST)
+                    const chunkSize = 50;
+                    for (let i = 0; i < modelsToUpdate.length; i += chunkSize) {
+                        const chunk = modelsToUpdate.slice(i, i + chunkSize);
+                        const { error } = await client.from('products')
+                            .update({ is_active: isActive })
+                            .in('model_suffix', chunk);
+
+                        if (error) {
+                            if (error.code === '42703' || error.message.includes('column "is_active" of relation "products" does not exist')) {
+                                alert("⚠️ Error Base de Datos: La columna 'is_active' aún no existe. Por favor, ejecuta el script UPDATE_PRODUCTS_ACTIVE.sql en Supabase.");
+                                return;
+                            }
+                            throw error;
+                        }
+                    }
+
+                    // Actualizar el UI de las filas que modificamos exitosamente
+                    checkboxesToUpdate.forEach(({ row, checkbox }) => {
+                        checkbox.checked = isActive;
+                        if (isActive) {
+                            row.style.opacity = '1';
+                            row.style.background = 'transparent';
+                        } else {
+                            row.style.opacity = '0.5';
+                            row.style.background = '#f8f9fa';
+                        }
+                    });
+
+                    alert(`¡Éxito! Se han ${isActive ? 'activado' : 'desactivado'} ${modelsToUpdate.length} productos correctamente.`);
+                } catch (e) {
+                    console.error("Error bulk updating status:", e);
+                    alert("Error al actualizar masivamente: " + e.message);
+                } finally {
+                    document.body.style.cursor = 'default';
+                }
             };
 
             window.loadVariableCosts = async function () {
