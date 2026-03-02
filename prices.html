@@ -38,19 +38,22 @@
                 <ul>
                     <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
                     <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
-                    <li id="nav-approvals"><a href="approvals.html"><span class="icon">✅</span> Aprobaciones</a></li>
+                    <li id="nav-approvals" style="display:none;"><a href="approvals.html"><span class="icon">📑</span>
+                            Aprobaciones</a></li>
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
-                    <li id="nav-prices" class="active" style="display: none;"><a href="#"><span class="icon">💲</span>
+                    <li id="nav-prices" style="display:none;"><a href="prices.html" class="active"><span
+                                class="icon">🏷️</span>
                             Precios</a></li>
-                    <li id="nav-users" style="display: none;"><a href="admin_users.html"><span class="icon">🛡️</span>
+                    <li id="nav-users" style="display:none;"><a href="admin_users.html"><span class="icon">👤</span>
                             Usuarios</a></li>
-                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
-                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">🗄️</span> Inventario</a></li>
+                    <li><a href="reports.html"><span class="icon">📊</span> Reportes</a></li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
                 <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
-                <a href="CRM/index.html" class="footer-link"><span class="icon">↪️</span> Cerrar Sesión</a>
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
+                        class="icon">🚪</span> Cerrar Sesión</a>
             </div>
         </aside>
 
@@ -233,17 +236,8 @@
                                 style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px;"
                                 oninput="window.filterCostsTable()">
                         </div>
-                        <div style="flex:1; min-width:300px;">
-                            <label style="display:block; margin-bottom:5px; font-weight:600; color:#495057;">Calcular
-                                "Marginal Profit" estimado simulando cliente:</label>
-                            <select id="costClientSelect"
-                                style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px;"
-                                onchange="window.calculateDynamicCosts()">
-                                <option value="">No Calcular Profit (Solo Ver Costos)</option>
-                            </select>
-                        </div>
                         <button onclick="window.downloadCurrentCosts()" class="btn-primary"
-                            style="height: 42px; background-color:#28a745; border-color:#28a745;">
+                            style="height: 42px; background-color:#28a745; border-color:#28a745; margin-left:auto;">
                             📥 Descargar Datos Actuales a Excel
                         </button>
                     </div>
@@ -254,11 +248,6 @@
                                     <th>Model Suffix</th>
                                     <th>Model Base</th>
                                     <th>Unit Variable Cost (USD)</th>
-                                    <th class="cost-dynamic-col"
-                                        style="display:none; text-align:right; border-left:1px solid #ced4da;">Est. Net
-                                        Price (USD)</th>
-                                    <th class="cost-dynamic-col" style="display:none; text-align:right;">Marginal Profit
-                                        (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -639,10 +628,8 @@
                                    style="border:1px solid #ced4da; border-radius:4px; padding:6px; margin-left:5px; width:120px; font-weight:bold; color:#A50034; outline:none;" 
                                    onchange="window.updateSingleCost('${c.model_suffix}', this.value, this)">
                             </td>
-                            <td class="cost-dynamic-col calc-net-col" style="display:none; text-align:right; border-left:1px solid #ced4da; font-weight:bold;">-</td>
-                            <td class="cost-dynamic-col calc-profit-col" style="display:none; text-align:right; font-weight:bold;">-</td>
                         </tr>`;
-                    }).join('') : '<tr><td colspan="5" style="text-align:center;">No variable costs defined yet. You can add one below or upload a file.</td></tr>';
+                    }).join('') : '<tr><td colspan="3" style="text-align:center;">No variable costs defined yet. You can add one below or upload a file.</td></tr>';
 
                     // Add an inline insert row at the top
                     const insertRowHtml = `
@@ -653,16 +640,10 @@
                                 $<input type="number" id="newCostPrice" step="0.01" placeholder="0.00" style="border:1px solid #ced4da; border-radius:4px; padding:6px; width:120px; font-weight:bold; color:#A50034; outline:none;">
                                 <button onclick="window.addNewCostItem()" class="btn-primary" style="padding: 6px 12px; font-size: 0.9em;">➕ Guardar Nuevo</button>
                             </td>
-                            <td colspan="2" class="cost-dynamic-col" style="display:none;"></td>
                         </tr>
                     `;
 
                     tbody.innerHTML = insertRowHtml + rowsHtml;
-
-                    // Trigger recalculation if a client is already selected
-                    if (document.getElementById('costClientSelect').value !== "") {
-                        window.calculateDynamicCosts();
-                    }
 
                 } catch (err) {
                     console.error("Load Costs Error:", err);
@@ -770,7 +751,6 @@
                     const row = inputElement.closest('.cost-row');
                     if (row) {
                         row.dataset.cost = newCost;
-                        window.calculateDynamicCosts();
                     }
 
                     setTimeout(() => {
@@ -848,94 +828,20 @@
 
             window.loadClients = async function () {
                 const sel = document.getElementById('clientSelect');
-                const selCost = document.getElementById('costClientSelect');
-                sel.innerHTML = '<option value="">Cargando...</option>';
-                if (selCost) selCost.innerHTML = '<option value="">No Calcular Profit (Solo Ver Costos)</option>';
+                if (sel) sel.innerHTML = '<option value="">Cargando...</option>';
 
                 const { data } = await client.from('companies').select('id, name').order('name');
-                sel.innerHTML = '<option value="">Select Customer...</option>';
+                if (sel) sel.innerHTML = '<option value="">Select Customer...</option>';
 
                 if (data) {
                     data.forEach(c => {
-                        const opt = document.createElement('option');
-                        opt.value = c.id;
-                        opt.textContent = c.name;
-                        sel.appendChild(opt);
-
-                        if (selCost) {
-                            const optCost = document.createElement('option');
-                            optCost.value = c.id;
-                            optCost.textContent = `Ver rentabilidades con matriz de: ${c.name}`;
-                            selCost.appendChild(optCost);
+                        if (sel) {
+                            const opt = document.createElement('option');
+                            opt.value = c.id;
+                            opt.textContent = c.name;
+                            sel.appendChild(opt);
                         }
                     });
-                }
-            };
-
-            window.calculateDynamicCosts = async function () {
-                const clientId = document.getElementById('costClientSelect').value;
-                const dynamicCols = document.querySelectorAll('.cost-dynamic-col');
-                const rows = document.querySelectorAll('#costsTable tbody tr.cost-row');
-
-                if (!clientId) {
-                    // Hide columns
-                    dynamicCols.forEach(col => col.style.display = 'none');
-                    return;
-                }
-
-                try {
-                    // Setup UI early
-                    dynamicCols.forEach(col => col.style.display = 'table-cell');
-
-                    // Fetch matrix for this client
-                    const { data: dData } = await client.from('distributor_discounts').select('*').eq('distributor_id', clientId);
-                    const clientMatrix = {};
-                    if (dData) {
-                        dData.forEach(dd => clientMatrix[dd.category] = dd.discount_percent);
-                    }
-
-                    rows.forEach(row => {
-                        const category = row.dataset.category;
-                        const cost = parseFloat(row.dataset.cost) || 0;
-                        const listPrice = parseFloat(row.dataset.list) || 0;
-
-                        const netCol = row.querySelector('.calc-net-col');
-                        const profitCol = row.querySelector('.calc-profit-col');
-
-                        if (!listPrice || listPrice === 0) {
-                            netCol.textContent = `List Price Faltante`;
-                            netCol.style.color = '#dc3545';
-                            profitCol.textContent = '-';
-                            return;
-                        }
-
-                        // Calcular según matriz
-                        const discount = clientMatrix[category] || 0;
-                        const netPrice = listPrice * ((100 - discount) / 100);
-
-                        // Margin formula = (Net Price / Variable Cost) - 1
-                        let marginPercent = 0;
-                        if (cost > 0) {
-                            marginPercent = ((netPrice / cost) - 1) * 100;
-                        }
-
-                        netCol.textContent = `$${netPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                        netCol.style.color = '#333';
-
-                        profitCol.textContent = `${marginPercent.toFixed(2)}%`;
-
-                        // Coloring threshold (editable as required by business)
-                        if (marginPercent < 0) {
-                            profitCol.style.color = '#dc3545'; // Red if loss
-                        } else if (marginPercent < 15) {
-                            profitCol.style.color = '#fd7e14'; // Orange if thin margin
-                        } else {
-                            profitCol.style.color = '#28a745'; // Green if healthy
-                        }
-                    });
-
-                } catch (e) {
-                    console.error("Error calculating dynamic costs:", e);
                 }
             };
 
@@ -1318,6 +1224,7 @@
 
                 console.log("User verified:", currentUser.email);
                 loadProducts(); // defined above
+                loadClients(); // populate dropdown for variable costs
 
             } catch (authErr) {
                 console.error("Auth check failed:", authErr);

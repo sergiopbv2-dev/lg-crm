@@ -116,22 +116,22 @@
                 <ul>
                     <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
                     <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
-                    <li id="nav-approvals" style="display:none;"><a href="approvals.html"><span class="icon">✅</span>
+                    <li id="nav-approvals" style="display:none;"><a href="approvals.html"><span class="icon">📑</span>
                             Aprobaciones</a></li>
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
-                    <li id="nav-prices" style="display:none;"><a href="prices.html"><span class="icon">💲</span>
+                    <li id="nav-prices" style="display:none;"><a href="prices.html"><span class="icon">🏷️</span>
                             Precios</a></li>
                     <li id="nav-users" style="display:none;"><a href="admin_users.html" class="active"><span
-                                class="icon">🛡️</span> Usuarios</a></li>
-                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
-                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
+                                class="icon">👤</span> Usuarios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">🗄️</span> Inventario</a></li>
+                    <li><a href="reports.html"><span class="icon">📊</span> Reportes</a></li>
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
                 <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
                 <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
-                        class="icon">↪️</span> Cerrar Sesión</a>
+                        class="icon">🚪</span> Cerrar Sesión</a>
             </div>
         </aside>
 
@@ -183,6 +183,30 @@
 
                     <button type="submit" class="btn-create" id="btnSubmit">Crear Usuario</button>
                 </form>
+            </div>
+
+            <!-- Listado de Usuarios -->
+            <div class="users-container" style="margin-top: 2rem; max-width: 900px;">
+                <h3 style="margin-top:0; margin-bottom: 1rem; font-family: var(--font-heading);">Usuarios Registrados
+                </h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #ddd;">
+                                <th style="padding: 12px 8px; font-weight: 600; color: #555;">Nombre / ID</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #555;">Rol</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #555;">Empresa</th>
+                                <th style="padding: 12px 8px; font-weight: 600; color: #555; text-align: right;">
+                                    Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="4" style="text-align:center; padding: 20px;">Cargando usuarios...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>
@@ -237,7 +261,89 @@
                     }
                 });
             }
+
+            // Load Existing Users
+            await loadExistingUsers(companies);
         });
+
+        async function loadExistingUsers(companiesList) {
+            const tbody = document.getElementById('usersTableBody');
+
+            // Map companies by ID for fast lookup
+            const compMap = {};
+            if (companiesList) {
+                companiesList.forEach(c => compMap[c.id] = c.name);
+            }
+
+            // Fetch profiles
+            const { data: profiles, error } = await client.from('profiles').select('*');
+
+            if (error) {
+                console.error("Error loading profiles:", error);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:red;">Error cargando perfiles: <br> ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (!profiles || profiles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No hay usuarios registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            // Render table
+            profiles.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #eee';
+
+                const roleBadgeColor = p.role === 'admin' ? '#A50034' : (p.role === 'kam' ? '#0284c7' : '#28a745');
+                const isSuspended = p.role === 'suspended';
+
+                const roleText = isSuspended ? 'Suspendido' : p.role.toUpperCase();
+                const btnAction = isSuspended
+                    ? `<button onclick="toggleUserStatus('${p.id}', 'user')" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;" title="Reactivar (como User normal)">▶ Reactivar</button>`
+                    : `<button onclick="toggleUserStatus('${p.id}', 'suspended')" style="background:#ff4d4f; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer;" title="Bloquear su acceso al sistema">🚫 Suspender</button>`;
+
+                const nameDisplay = p.full_name ? p.full_name : `<span style="color:#999;font-size:0.85em;">ID: ${p.id.substring(0, 8)}...</span>`;
+                const compName = p.distributor_id ? (compMap[p.distributor_id] || "ID Desconocido") : "--Global/Ninguna--";
+
+                const rowColor = isSuspended ? '#fdf0f0' : 'transparent';
+                tr.style.backgroundColor = rowColor;
+
+                tr.innerHTML = `
+                    <td style="padding: 12px 8px;">${nameDisplay}</td>
+                    <td style="padding: 12px 8px;">
+                        <span style="background:${isSuspended ? '#ccc' : roleBadgeColor}; color:white; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:600;">
+                            ${roleText}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 8px; font-size:0.9em; color:#555;">${compName}</td>
+                    <td style="padding: 12px 8px; text-align:right;">
+                        ${btnAction}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.toggleUserStatus = async (userId, newRole) => {
+            if (newRole === 'suspended') {
+                if (!confirm("Al suspender este perfil, el usuario ya no podrá ver ni acceder a ninguna sección del CRM.\n\n¿Estás seguro de suspender este acceso?")) return;
+            } else {
+                if (!confirm("Se reactivará al usuario. Se le asignará el rol básico ['user'] por defecto. Si necesita permisos de Administrador deberá cambiarse manual.\n\n¿Desea reactivarlo?")) return;
+            }
+
+            const { error: profileError } = await client.from('profiles').update({ role: newRole }).eq('id', userId);
+
+            if (profileError) {
+                alert("Hubo un error al intentar cambiar el rol: " + profileError.message);
+                return;
+            }
+
+            // Refrescar
+            alert(`Acceso ${newRole === 'suspended' ? 'Suspendido' : 'Reactivado'} correctamente.`);
+            window.location.reload();
+        };
 
         window.toggleCompanySelect = function () {
             const role = document.getElementById('newUserRole').value;

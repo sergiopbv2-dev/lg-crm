@@ -187,6 +187,13 @@ body {
   text-align: center;
   display: inline-block;
   margin-right: 4px;
+  filter: grayscale(100%) opacity(0.7);
+  transition: all 0.3s ease;
+}
+
+.sidebar-nav a.active .icon,
+.sidebar-nav a:hover .icon {
+  filter: grayscale(0%) opacity(1);
 }
 
 .sidebar-footer {
@@ -207,9 +214,18 @@ body {
   transition: var(--transition);
 }
 
+.footer-link .icon {
+  filter: grayscale(100%) opacity(0.7);
+  transition: all 0.3s ease;
+}
+
 .footer-link:hover {
   background-color: #f8f9fa;
   color: var(--primary);
+}
+
+.footer-link:hover .icon {
+  filter: grayscale(0%) opacity(1);
 }
 
 
@@ -798,6 +814,24 @@ h2,
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.tiny-select {
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  color: #495057;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  outline: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.tiny-select:hover {
+  border-color: #adb5bd;
+  background-color: #fff;
 }
 
 .card {
