@@ -2106,6 +2106,9 @@
                         const dbProdMap = new Map();
                         if (dbProducts) {
                             dbProducts.forEach(p => {
+                                // Skip deactivated products
+                                if (p.is_active === false) return;
+
                                 if (!dbProdMap.has(p.model_short) || (p.category && !dbProdMap.get(p.model_short).category)) {
                                     dbProdMap.set(p.model_short, p);
                                 }
@@ -2161,10 +2164,19 @@
         async function doSearch(v) {
             v = v.trim(); const d = document.getElementById('searchResults');
             if (v.length < 2) { d.style.display = 'none'; return; }
-            const { data: p } = await db.from('products').select('*').or(`model_suffix.ilike.%${v}%,model_short.ilike.%${v}%`).limit(20);
+
+            // Limit to 50 initially to account for filtered out inactive items
+            const { data: pDb } = await db.from('products').select('*').or(`model_suffix.ilike.%${v}%,model_short.ilike.%${v}%`).limit(50);
             d.innerHTML = ''; d.style.display = 'block';
 
-            if (p && p.length) {
+            if (pDb && pDb.length) {
+                // Filter out inactive products (handle nulls as active by default)
+                const p = pDb.filter(x => x.is_active !== false);
+
+                if (p.length === 0) {
+                    d.innerHTML = '<div style="padding:10px">Sin resultados activos encontrados</div>';
+                    return;
+                }
                 // Deduplicar por model_short. Priorizar los que sí tengan categoría para que los descuentos apliquen correctamente
                 const uniqueProductsMap = new Map();
                 p.forEach(x => {
