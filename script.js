@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isAdmin) {
                 const navPrices = document.getElementById('nav-prices');
                 if (navPrices) navPrices.style.display = 'block';
+
+                const navUsers = document.getElementById('nav-users');
+                if (navUsers) navUsers.style.display = 'block';
             }
 
             // 2. Get Company Name (Only if not global admin or if admin belongs to a specific company)

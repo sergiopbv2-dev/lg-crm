@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LG Electronics | Gestión de Usuarios</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2024">
+    <link rel="stylesheet" href="responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #000;
+        }
+
+        .users-container {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-card);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        .btn-create {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .btn-create:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffeeba;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-container">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/20/LG_symbol.svg" alt="LG Logo"
+                        class="brand-logo">
+                    <div class="brand-text">
+                        <span class="brand-name">LG Electronics</span>
+                        <span class="brand-tagline">Eco Solutions</span>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="index.html"><span class="icon">⊞</span> Dashboard</a></li>
+                    <li><a href="quotes.html"><span class="icon">📄</span> Cotizaciones</a></li>
+                    <li id="nav-approvals" style="display:none;"><a href="approvals.html"><span class="icon">✅</span>
+                            Aprobaciones</a></li>
+                    <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
+                    <li id="nav-prices" style="display:none;"><a href="prices.html"><span class="icon">💲</span>
+                            Precios</a></li>
+                    <li id="nav-users" style="display:none;"><a href="admin_users.html" class="active"><span
+                                class="icon">🛡️</span> Usuarios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
+                    <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="footer-link"><span class="icon">⚙️</span> Configuración</a>
+                <a href="CRM/index.html" class="footer-link" onclick="sessionStorage.clear();"><span
+                        class="icon">↪️</span> Cerrar Sesión</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="header-flex">
+                <button id="mobile-menu-btn" class="mobile-menu-btn">☰</button>
+                <h2>Gestión de Usuarios</h2>
+                <div class="user-profile" id="user-profile-badge"></div>
+            </div>
+
+            <div class="users-container">
+                <div class="warning-box">
+                    <strong>⚠️ AVISO DE SEGURIDAD:</strong> Al crear un usuario desde este panel con la base de datos de
+                    Supabase, <b>tu sesión actual de Administrador se cerrará automáticamente</b> y se iniciará la del
+                    nuevo usuario recién creado (esto es por arquitectura de seguridad).
+                    <br><br>Una vez creado, asegúrate de presionar "Cerrar Sesión" e ingresar nuevamente con tu cuenta
+                    de Admin.
+                </div>
+
+                <form id="createUserForm">
+                    <div class="form-group">
+                        <label>Correo Electrónico (Login)</label>
+                        <input type="email" id="newUserEmail" required placeholder="ejemplo@lge.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contraseña Provisional</label>
+                        <input type="text" id="newUserPassword" required
+                            placeholder="Contraseña segura (min 6 caracteres)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tipo de Rol</label>
+                        <select id="newUserRole" required onchange="toggleCompanySelect()">
+                            <option value="">Seleccione un rol...</option>
+                            <option value="user">Simple User (Distribuidor / Cliente Externo)</option>
+                            <option value="kam">Usuario KAM (Vendedor Interno LG)</option>
+                            <option value="admin">Administrador (Acceso Total)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="companyGroup" style="display:none;">
+                        <label>Empresa Asociada (Requerida para Usuarios / KAMs)</label>
+                        <select id="newUserCompany">
+                            <option value="">Cargando empresas...</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-create" id="btnSubmit">Crear Usuario</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+        const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { user }, error: authError } = await client.auth.getUser();
+            if (authError || !user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Check Admin
+            let isAdmin = (user.email === 'admin@lge.com' || user.email === 'sergio.baezv@usach.cl');
+            if (!isAdmin) {
+                const { data: profile } = await client.from('profiles').select('role').eq('id', user.id).single();
+                if (profile && profile.role === 'admin') isAdmin = true;
+            }
+
+            if (!isAdmin) {
+                alert("Acceso denegado. Solo administradores pueden gestionar usuarios.");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Show Navs
+            document.getElementById('nav-approvals').style.display = 'block';
+            document.getElementById('nav-prices').style.display = 'block';
+            document.getElementById('nav-users').style.display = 'block';
+
+            // Load Companies
+            const { data: companies } = await client.from('companies').select('id, name').order('name');
+            const sel = document.getElementById('newUserCompany');
+            sel.innerHTML = '<option value="">Seleccione una empresa (Obligatorio para Distribuidores)</option>';
+
+            // Add LG First for KAMs
+            let lgId = null;
+            if (companies) {
+                const lg = companies.find(c => c.name.toLowerCase().includes('lg electronics'));
+                if (lg) {
+                    lgId = lg.id;
+                    sel.innerHTML += `<option value="${lg.id}" style="font-weight:bold;">🏢 LG Electronics (Recomendado para KAM)</option>`;
+                }
+
+                companies.forEach(c => {
+                    if (!lgId || c.id !== lgId) {
+                        sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    }
+                });
+            }
+        });
+
+        window.toggleCompanySelect = function () {
+            const role = document.getElementById('newUserRole').value;
+            const group = document.getElementById('companyGroup');
+
+            if (role === 'user' || role === 'kam') {
+                group.style.display = 'block';
+                document.getElementById('newUserCompany').required = (role === 'user'); // For KAMs it's optional but highly recommended to be LG
+            } else {
+                group.style.display = 'none';
+                document.getElementById('newUserCompany').required = false;
+            }
+        };
+
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const email = document.getElementById('newUserEmail').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+            let companyId = document.getElementById('newUserCompany').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Creando Usuario...';
+
+            try {
+                // If KAM and no company, try to force LG
+                if (role === 'kam' && !companyId) {
+                    const { data: lg } = await client.from('companies').select('id').ilike('name', 'LG%').limit(1).single();
+                    if (lg) companyId = lg.id;
+                }
+
+                if (role === 'user' && !companyId) {
+                    throw new Error("Debes seleccionar una empresa para los usuarios de tipo Distribuidor / Cliente Externo.");
+                }
+
+                // 1. SignUp Action (This will swap the active browser session)
+                const { data: newUser, error: signUpError } = await client.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (signUpError) {
+                    // Check if already registered
+                    if (signUpError.message.includes('already registered')) throw new Error("Este correo ya está registrado en el sistema.");
+                    throw signUpError;
+                }
+
+                if (!newUser.user) throw new Error("No se pudo obtener el ID del usuario creado.");
+
+                // 2. Insert/Update Profile via PostgREST
+                const newProfile = {
+                    id: newUser.user.id,
+                    role: role,
+                    distributor_id: companyId ? companyId : null
+                };
+
+                const { error: profileError } = await client.from('profiles').upsert(newProfile);
+                if (profileError) {
+                    console.error("Profile Error:", profileError);
+                    alert("⚠️ El usuario fue creado, pero falló la asignación de Rol. Avise a soporte.");
+                }
+
+                alert(`✅ ¡Éxito!\n\nEl usuario ${email} fue creado como [${role.toUpperCase()}].\n\nTu sesión fue cerrada por seguridad. Ahora ingresarás al sistema de nuevo.`);
+
+                // Sign out new user session to flush everything, force admin to log in again
+                await client.auth.signOut();
+                sessionStorage.clear();
+                window.location.href = 'index.html'; // back to login
+
+            } catch (err) {
+                console.error(err);
+                alert("Error al crear usuario: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = 'Crear Usuario';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -248,6 +248,9 @@
                     <li><a href="clients.html" class="active"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-users" style="display: none;"><a href="admin_users.html"><span class="icon">🛡️</span>
+                            Usuarios</a></li>
+                    <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
             </nav>
@@ -285,6 +288,7 @@
                             <th>Contacto</th>
                             <th>Roles</th>
                             <th>Dirección</th>
+                            <th id="thActions" style="display:none; text-align:right;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -331,6 +335,11 @@
                         </label>
                         <label style="display:inline-flex; align-items:center; gap:5px; font-weight:normal;">
                             <input type="checkbox" id="chkEndUser" style="width:auto;"> Cliente Final
+                        </label>
+                        <label id="lblDistributor"
+                            style="display:none; align-items:center; gap:5px; font-weight:bold; color:#A50034; border:1px solid #A50034; padding:2px 8px; border-radius:4px; margin-left:10px;">
+                            <input type="checkbox" id="chkDistributor" style="width:auto;"> Distribuidor (Aplica Matriz
+                            de Descuentos)
                         </label>
                     </div>
                 </div>
@@ -438,6 +447,7 @@
                     if (nav) nav.style.display = 'block';
                 }
 
+                window.currentUser = user;
                 await loadClients(user);
             }
 
@@ -461,6 +471,12 @@
                     if (isAdmin) {
                         const navPrices = document.getElementById('nav-prices');
                         if (navPrices) navPrices.style.display = 'block';
+
+                        const navUsers = document.getElementById('nav-users');
+                        if (navUsers) navUsers.style.display = 'block';
+
+                        const lblDist = document.getElementById('lblDistributor');
+                        if (lblDist) lblDist.style.display = 'inline-flex';
                     }
 
                     // Update UI Badge (Reusing logic for consistency)
@@ -489,7 +505,7 @@
                     const { data: clients, error } = await query;
                     if (error) throw error;
 
-                    renderTable(clients);
+                    renderTable(clients, isAdmin);
 
                 } catch (err) {
                     console.error('Error fetching clients:', err);
@@ -503,13 +519,16 @@
                 }
             }
 
-            function renderTable(clients) {
+            function renderTable(clients, isAdmin = false) {
                 tableBody.innerHTML = '';
+
+                const thActions = document.getElementById('thActions');
+                if (thActions) thActions.style.display = isAdmin ? 'table-cell' : 'none';
 
                 if (!clients || clients.length === 0) {
                     tableBody.innerHTML = `
                         <tr>
-                            <td colspan="5" style="text-align:center; padding: 3rem;">
+                            <td colspan="${isAdmin ? 6 : 5}" style="text-align:center; padding: 3rem;">
                                 <div style="font-size: 2rem; margin-bottom: 10px;">👥</div>
                                 <div style="font-weight: 500; font-size: 1.1rem; color: #333;">No hay clientes registrados aún</div>
                                 <div style="color: var(--text-secondary);">Haz clic en "Nuevo Cliente" para agregar uno.</div>
@@ -535,6 +554,10 @@
                             </td>
                             <td>${badges}</td>
                             <td style="font-size:0.9em; color:#495057;">${client.address || '-'}</td>
+                            ${isAdmin ? `<td style="text-align:right;">
+                                <button onclick="deleteClient('${client.id}')" title="Eliminar Cliente" 
+                                    style="background:none; border:none; color:#A50034; font-size:1.2rem; cursor:pointer; padding:5px;">🗑</button>
+                            </td>` : ''}
                         </tr>
                     `;
                     tableBody.insertAdjacentHTML('beforeend', row);
@@ -556,29 +579,61 @@
                     // Get Profile to find Distributor ID - CRITICAL FOR SECURITY
                     const { data: profile } = await supabase
                         .from('profiles')
-                        .select('distributor_id')
+                        .select('distributor_id, role')
                         .eq('id', user.id)
                         .single();
 
-                    if (!profile || !profile.distributor_id) {
+                    let distId = profile?.distributor_id;
+                    const isAdmin = (user.email === 'admin@lge.com' || profile?.role === 'admin');
+
+                    // If user is Admin but has no distributor assigned, act as LG Electronics
+                    if (!distId && isAdmin) {
+                        let { data: lgCompany } = await supabase.from('companies').select('id').ilike('name', 'LG P%').limit(1).single(); // Try 'LG Peru', 'LG Panama', etc.
+                        if (!lgCompany) {
+                            let { data: anyLg } = await supabase.from('companies').select('id').ilike('name', 'LG%').limit(1).single();
+                            if (anyLg) lgCompany = anyLg;
+                        }
+
+                        if (lgCompany) {
+                            distId = lgCompany.id;
+                        } else {
+                            // Auto setup LG
+                            const { data: newLg, error: errC } = await supabase.from('companies').insert([{ name: 'LG Electronics' }]).select('id').single();
+                            if (!errC && newLg) distId = newLg.id;
+                        }
+
+                        // Update profile if possible so we cache it
+                        if (distId && profile) {
+                            await supabase.from('profiles').update({ distributor_id: distId }).eq('id', user.id);
+                        }
+                    }
+
+                    if (!distId) {
                         throw new Error('No tienes una empresa distribuidora asignada. Contacta al admin.');
                     }
+
+                    const isDistributor = document.getElementById('chkDistributor')?.checked;
 
                     const newClient = {
                         company_name: document.getElementById('companyName').value,
                         company_rut: document.getElementById('companyRut').value,
                         contact_name: document.getElementById('contactName').value,
                         contact_phone: document.getElementById('contactPhone').value,
-                        contact_phone: document.getElementById('contactPhone').value,
-                        // client_type: document.getElementById('clientType').value, // Deprecated logic
                         is_installer: document.getElementById('chkInstaller').checked,
                         is_consultant: document.getElementById('chkConsultant').checked,
                         is_end_user: document.getElementById('chkEndUser').checked,
                         address: document.getElementById('address').value,
-                        distributor_id: profile.distributor_id // CRITICAL: The security key
+                        distributor_id: distId // CRITICAL: The security key
                     };
 
                     const { error } = await supabase.from('clients').insert([newClient]);
+                    if (error) throw error;
+
+                    if (isDistributor && isAdmin) {
+                        // Create the company so it appears in the Prices matrix
+                        const { error: errComp } = await supabase.from('companies').insert([{ name: newClient.company_name }]);
+                        if (errComp) console.warn("Could not create company mirror:", errComp);
+                    }
 
                     if (error) throw error;
 
@@ -594,6 +649,35 @@
                     btn.disabled = false;
                 }
             });
+
+            // Delete Client Logic
+            window.deleteClient = async function (clientId) {
+                if (!confirm("¿Está seguro de que desea eliminar a este cliente?\n\nLas cotizaciones asociadas no se borrarán, pero quedarán marcadas 'Sin Cliente'.")) return;
+
+                try {
+                    // 1. Set quote client_id to null for any quotes linked to this client
+                    const { error: errorQuotes } = await supabase
+                        .from('quotes')
+                        .update({ client_id: null })
+                        .eq('client_id', clientId);
+
+                    if (errorQuotes) throw errorQuotes;
+
+                    // 2. Delete the client
+                    const { error: errorClient } = await supabase
+                        .from('clients')
+                        .delete()
+                        .eq('id', clientId);
+
+                    if (errorClient) throw errorClient;
+
+                    alert("Cliente eliminado existosamente.");
+                    loadClients(window.currentUser);
+                } catch (err) {
+                    console.error("Error deleting client:", err);
+                    alert("Error al eliminar el cliente: " + err.message);
+                }
+            };
 
             // Start
             init();

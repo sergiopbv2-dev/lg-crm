@@ -128,6 +128,8 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" style="display: none;"><a href="prices.html"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-users" style="display: none;"><a href="admin_users.html"><span class="icon">🛡️</span>
+                            Usuarios</a></li>
                     <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html" class="active"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
@@ -233,6 +235,9 @@
                 const navPrices = document.getElementById('nav-prices');
                 if (navPrices) navPrices.style.display = 'block';
 
+                const navUsers = document.getElementById('nav-users');
+                if (navUsers) navUsers.style.display = 'block';
+
             } else if (profile) {
                 isAdmin = (profile.role === 'admin');
                 myDistributorId = profile.distributor_id;
@@ -243,6 +248,9 @@
                     // Show prices link
                     const navPrices = document.getElementById('nav-prices');
                     if (navPrices) navPrices.style.display = 'block';
+
+                    const navUsers = document.getElementById('nav-users');
+                    if (navUsers) navUsers.style.display = 'block';
 
                 } else if (myDistributorId) {
                     const { data: comp } = await db.from('companies').select('name').eq('id', myDistributorId).single();

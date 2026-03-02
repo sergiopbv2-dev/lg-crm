@@ -42,6 +42,8 @@
                     <li><a href="clients.html"><span class="icon">👥</span> Clientes</a></li>
                     <li id="nav-prices" class="active" style="display: none;"><a href="#"><span class="icon">💲</span>
                             Precios</a></li>
+                    <li id="nav-users" style="display: none;"><a href="admin_users.html"><span class="icon">🛡️</span>
+                            Usuarios</a></li>
                     <li id="nav-stock"><a href="stock.html"><span class="icon">📦</span> Inventario</a></li>
                     <li><a href="reports.html"><span class="icon">🕒</span> Reportes</a></li>
                 </ul>
@@ -223,10 +225,27 @@
             <!-- Content: Variable Costs -->
             <div id="tab-costs" class="tab-content" style="display:none;">
                 <div class="card">
-                    <div style="margin-bottom: 20px;">
-                        <input type="text" id="costSearchInput" placeholder="Buscar por Modelo (ej: ABNW...)"
-                            style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ced4da; border-radius: 6px;"
-                            oninput="window.filterCostsTable()">
+                    <div style="margin-bottom: 20px; display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:300px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:600; color:#495057;">Buscador
+                                Rápido</label>
+                            <input type="text" id="costSearchInput" placeholder="Buscar por Modelo (ej: ABNW...)"
+                                style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px;"
+                                oninput="window.filterCostsTable()">
+                        </div>
+                        <div style="flex:1; min-width:300px;">
+                            <label style="display:block; margin-bottom:5px; font-weight:600; color:#495057;">Calcular
+                                "Marginal Profit" estimado simulando cliente:</label>
+                            <select id="costClientSelect"
+                                style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px;"
+                                onchange="window.calculateDynamicCosts()">
+                                <option value="">No Calcular Profit (Solo Ver Costos)</option>
+                            </select>
+                        </div>
+                        <button onclick="window.downloadCurrentCosts()" class="btn-primary"
+                            style="height: 42px; background-color:#28a745; border-color:#28a745;">
+                            📥 Descargar Datos Actuales a Excel
+                        </button>
                     </div>
                     <div class="table-container">
                         <table id="costsTable">
@@ -235,6 +254,11 @@
                                     <th>Model Suffix</th>
                                     <th>Model Base</th>
                                     <th>Unit Variable Cost (USD)</th>
+                                    <th class="cost-dynamic-col"
+                                        style="display:none; text-align:right; border-left:1px solid #ced4da;">Est. Net
+                                        Price (USD)</th>
+                                    <th class="cost-dynamic-col" style="display:none; text-align:right;">Marginal Profit
+                                        (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -311,6 +335,9 @@
             if (isAdmin) {
                 const navPrices = document.getElementById('nav-prices');
                 if (navPrices) navPrices.style.display = 'block';
+
+                const navUsers = document.getElementById('nav-users');
+                if (navUsers) navUsers.style.display = 'block';
             } else {
                 alert("Acceso denegado: Solo administradores.");
                 window.location.href = 'index.html';
@@ -351,27 +378,36 @@
             };
 
             window.downloadTemplate = function (type) {
-                let csvContent = "";
-                let filename = "";
+                let wsData = [];
+                let fileName = '';
+
                 if (type === 'products') {
-                    csvContent = "\uFEFFModel,Price,Category,Description\nARNU07GTRA4,500,Multi-V,Example Unit\nPREMTB100,150,Accessories,Wired Remote";
-                    filename = "Template_Products.csv";
+                    wsData = [
+                        ["Model Suffix", "List Price", "Category", "Description"],
+                        ["ARNU073TRD4.ENCXLEU", 1200.50, "Multi V", "Indoor Unit"],
+                        ["ARUM120LTE5.ENCXLEU", 8500.00, "Multi V", "Outdoor Unit"]
+                    ];
+                    fileName = "Template_List_Price.xlsx";
                 } else if (type === 'discounts') {
-                    csvContent = "\uFEFFCompany,Category,Discount\nCosmoplas,Multi-V,45\nIngenieria Climaproyectos,Single,30";
-                    filename = "Template_Discounts.csv";
+                    wsData = [
+                        ["Company", "Category", "Discount"],
+                        ["Distribuidor Norte", "Multi V", 45],
+                        ["Instalador Sur", "RAC", 30]
+                    ];
+                    fileName = "Template_Discounts.xlsx";
                 } else if (type === 'costs') {
-                    csvContent = "\uFEFFModel.Suffix,Model,Unit Variable Cost\nARNU07GTRA4.AMBBLAT,ARNU07GTRA4,250.50\nPREMTB100.ENCXCOM,PREMTB100,75.00";
-                    filename = "Template_Variable_Costs.csv";
+                    wsData = [
+                        ["Model Suffix", "Unit Variable Cost"],
+                        ["ARNU073TRD4.ENCXLEU", 850.25],
+                        ["ARUM120LTE5.ENCXLEU", 5100.00]
+                    ];
+                    fileName = "Template_Variable_Costs.xlsx";
                 }
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.setAttribute('download', filename);
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 100);
+
+                const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+                XLSX.writeFile(workbook, fileName);
             };
 
             window.loadProducts = async function () {
@@ -583,10 +619,19 @@
                         throw error;
                     }
 
+                    // Fetch products to map lists later for profit calculations
+                    const { data: prods } = await client.from('products').select('*');
+                    const prodMap = new Map();
+                    if (prods) prods.forEach(p => prodMap.set(p.model_suffix, p));
+
                     // Map all rows
                     let rowsHtml = (data && data.length > 0) ? data.map(c => {
                         const cost = c.unit_variable_cost !== undefined ? c.unit_variable_cost : 0;
-                        return `<tr class="cost-row">
+                        const refProd = prodMap.get(c.model_suffix);
+                        const listPrice = refProd ? (refProd.list_price || 0) : 0;
+                        const category = refProd ? refProd.category : 'General';
+
+                        return `<tr class="cost-row" data-model="${c.model_suffix}" data-cost="${cost}" data-list="${listPrice}" data-category="${category}">
                             <td class="cost-model-col"><strong>${c.model_suffix || '-'}</strong></td>
                             <td class="cost-base-col" style="color:#6c757d;">${(c.model_suffix || '').split('.')[0] || '-'}</td>
                             <td style="font-weight:600; color:#A50034; display:flex; align-items:center;">
@@ -594,8 +639,10 @@
                                    style="border:1px solid #ced4da; border-radius:4px; padding:6px; margin-left:5px; width:120px; font-weight:bold; color:#A50034; outline:none;" 
                                    onchange="window.updateSingleCost('${c.model_suffix}', this.value, this)">
                             </td>
+                            <td class="cost-dynamic-col calc-net-col" style="display:none; text-align:right; border-left:1px solid #ced4da; font-weight:bold;">-</td>
+                            <td class="cost-dynamic-col calc-profit-col" style="display:none; text-align:right; font-weight:bold;">-</td>
                         </tr>`;
-                    }).join('') : '<tr><td colspan="3" style="text-align:center;">No variable costs defined yet. You can add one below or upload a file.</td></tr>';
+                    }).join('') : '<tr><td colspan="5" style="text-align:center;">No variable costs defined yet. You can add one below or upload a file.</td></tr>';
 
                     // Add an inline insert row at the top
                     const insertRowHtml = `
@@ -606,14 +653,46 @@
                                 $<input type="number" id="newCostPrice" step="0.01" placeholder="0.00" style="border:1px solid #ced4da; border-radius:4px; padding:6px; width:120px; font-weight:bold; color:#A50034; outline:none;">
                                 <button onclick="window.addNewCostItem()" class="btn-primary" style="padding: 6px 12px; font-size: 0.9em;">➕ Guardar Nuevo</button>
                             </td>
+                            <td colspan="2" class="cost-dynamic-col" style="display:none;"></td>
                         </tr>
                     `;
 
                     tbody.innerHTML = insertRowHtml + rowsHtml;
 
+                    // Trigger recalculation if a client is already selected
+                    if (document.getElementById('costClientSelect').value !== "") {
+                        window.calculateDynamicCosts();
+                    }
+
                 } catch (err) {
                     console.error("Load Costs Error:", err);
-                    tbody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Error: ${err.message}</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${err.message}</td></tr>`;
+                }
+            };
+
+            window.downloadCurrentCosts = async function () {
+                try {
+                    document.body.style.cursor = 'wait';
+                    const { data, error } = await client.from('product_costs').select('*').order('model_suffix');
+                    if (error) throw error;
+                    if (!data || data.length === 0) return alert("No hay costos en la base de datos.");
+
+                    const reportData = data.map(c => ({
+                        "Model.Suffix": c.model_suffix,
+                        "Unit Variable Cost": c.unit_variable_cost
+                    }));
+
+                    const worksheet = XLSX.utils.json_to_sheet(reportData);
+                    worksheet['!cols'] = [{ wch: 35 }, { wch: 20 }];
+
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Costos Guardados");
+                    XLSX.writeFile(workbook, `Reporte_Costos_Actuales.xlsx`);
+
+                } catch (e) {
+                    alert("Error descargando archivo: " + e.message);
+                } finally {
+                    document.body.style.cursor = 'default';
                 }
             };
 
@@ -686,6 +765,13 @@
                     }, { onConflict: 'model_suffix' });
 
                     if (error) throw error;
+
+                    // Update dataset and recalculate if needed without full refresh
+                    const row = inputElement.closest('.cost-row');
+                    if (row) {
+                        row.dataset.cost = newCost;
+                        window.calculateDynamicCosts();
+                    }
 
                     setTimeout(() => {
                         inputElement.style.backgroundColor = origBg;
@@ -762,15 +848,95 @@
 
             window.loadClients = async function () {
                 const sel = document.getElementById('clientSelect');
-                sel.innerHTML = '<option value="">Loading...</option>';
+                const selCost = document.getElementById('costClientSelect');
+                sel.innerHTML = '<option value="">Cargando...</option>';
+                if (selCost) selCost.innerHTML = '<option value="">No Calcular Profit (Solo Ver Costos)</option>';
+
                 const { data } = await client.from('companies').select('id, name').order('name');
                 sel.innerHTML = '<option value="">Select Customer...</option>';
-                if (data) data.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = c.name;
-                    sel.appendChild(opt);
-                });
+
+                if (data) {
+                    data.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.name;
+                        sel.appendChild(opt);
+
+                        if (selCost) {
+                            const optCost = document.createElement('option');
+                            optCost.value = c.id;
+                            optCost.textContent = `Ver rentabilidades con matriz de: ${c.name}`;
+                            selCost.appendChild(optCost);
+                        }
+                    });
+                }
+            };
+
+            window.calculateDynamicCosts = async function () {
+                const clientId = document.getElementById('costClientSelect').value;
+                const dynamicCols = document.querySelectorAll('.cost-dynamic-col');
+                const rows = document.querySelectorAll('#costsTable tbody tr.cost-row');
+
+                if (!clientId) {
+                    // Hide columns
+                    dynamicCols.forEach(col => col.style.display = 'none');
+                    return;
+                }
+
+                try {
+                    // Setup UI early
+                    dynamicCols.forEach(col => col.style.display = 'table-cell');
+
+                    // Fetch matrix for this client
+                    const { data: dData } = await client.from('distributor_discounts').select('*').eq('distributor_id', clientId);
+                    const clientMatrix = {};
+                    if (dData) {
+                        dData.forEach(dd => clientMatrix[dd.category] = dd.discount_percent);
+                    }
+
+                    rows.forEach(row => {
+                        const category = row.dataset.category;
+                        const cost = parseFloat(row.dataset.cost) || 0;
+                        const listPrice = parseFloat(row.dataset.list) || 0;
+
+                        const netCol = row.querySelector('.calc-net-col');
+                        const profitCol = row.querySelector('.calc-profit-col');
+
+                        if (!listPrice || listPrice === 0) {
+                            netCol.textContent = `List Price Faltante`;
+                            netCol.style.color = '#dc3545';
+                            profitCol.textContent = '-';
+                            return;
+                        }
+
+                        // Calcular según matriz
+                        const discount = clientMatrix[category] || 0;
+                        const netPrice = listPrice * ((100 - discount) / 100);
+
+                        // Margin formula = (Net Price / Variable Cost) - 1
+                        let marginPercent = 0;
+                        if (cost > 0) {
+                            marginPercent = ((netPrice / cost) - 1) * 100;
+                        }
+
+                        netCol.textContent = `$${netPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                        netCol.style.color = '#333';
+
+                        profitCol.textContent = `${marginPercent.toFixed(2)}%`;
+
+                        // Coloring threshold (editable as required by business)
+                        if (marginPercent < 0) {
+                            profitCol.style.color = '#dc3545'; // Red if loss
+                        } else if (marginPercent < 15) {
+                            profitCol.style.color = '#fd7e14'; // Orange if thin margin
+                        } else {
+                            profitCol.style.color = '#28a745'; // Green if healthy
+                        }
+                    });
+
+                } catch (e) {
+                    console.error("Error calculating dynamic costs:", e);
+                }
             };
 
             let allCompaniesForMatrix = [];
