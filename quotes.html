@@ -2665,7 +2665,21 @@
                 } else {
                     // Insert
                     qData.user_id = currentUser.id;
-                    qData.distributor_id = myDistributorId;
+
+                    let resolvedDistId = myDistributorId;
+                    if (!resolvedDistId) {
+                        const clientSel = document.getElementById('clientSelect');
+                        if (clientSel && clientSel.selectedIndex > -1) {
+                            const opt = clientSel.options[clientSel.selectedIndex];
+                            if (opt && opt.dataset.distributorId) resolvedDistId = opt.dataset.distributorId;
+                        }
+                        if (!resolvedDistId) {
+                            const { data: lgC } = await db.from('companies').select('id').ilike('name', 'LG%').limit(1).single();
+                            if (lgC) resolvedDistId = lgC.id;
+                        }
+                    }
+
+                    qData.distributor_id = resolvedDistId;
                     qData.requested_by = currentUser.id;
 
                     const { data: q, error: ie } = await db.from('quotes').insert([qData]).select().single();

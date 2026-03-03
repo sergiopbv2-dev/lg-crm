@@ -1422,15 +1422,11 @@
             try {
                 const tot = quoteItems.reduce((a, b) => a + (b.net * b.qty), 0);
                 const qData = {
-                    user_id: currentUser.id, distributor_id: myDistributorId,
                     project_name: projectName,
                     client_id: clientId,
                     quote_code: document.getElementById('quoteCode').value,
                     award_date: awardDateVal, total_net_price: tot, status: 'draft',
                     stage: document.getElementById('quoteStage').value,
-                    consultant_id: document.getElementById('consultantSelect').value || null,
-                    is_spec_in: document.getElementById('chkSpecIn').checked,
-                    is_retrofit: document.getElementById('chkRetrofit').checked,
                     consultant_id: document.getElementById('consultantSelect').value || null,
                     is_spec_in: document.getElementById('chkSpecIn').checked,
                     is_retrofit: document.getElementById('chkRetrofit').checked,
@@ -1446,6 +1442,24 @@
                     await db.from('quote_items').delete().eq('quote_id', qId);
                 } else {
                     // Insert
+                    qData.user_id = currentUser.id;
+
+                    let resolvedDistId = myDistributorId;
+                    if (!resolvedDistId) {
+                        const clientSel = document.getElementById('clientSelect');
+                        if (clientSel && clientSel.selectedIndex > -1) {
+                            const opt = clientSel.options[clientSel.selectedIndex];
+                            if (opt && opt.dataset.distributorId) resolvedDistId = opt.dataset.distributorId;
+                        }
+                        if (!resolvedDistId) {
+                            const { data: lgC } = await db.from('companies').select('id').ilike('name', 'LG%').limit(1).single();
+                            if (lgC) resolvedDistId = lgC.id;
+                        }
+                    }
+
+                    qData.distributor_id = resolvedDistId;
+                    qData.requested_by = currentUser.id;
+
                     const { data: q, error: ie } = await db.from('quotes').insert([qData]).select().single();
                     if (ie) throw ie;
                     qId = q.id;
