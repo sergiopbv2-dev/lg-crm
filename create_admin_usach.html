@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Admin: Sergio Usach</title>
+    <!-- Fallback to unpkg if jsdelivr is slow -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #A50034;
+        }
+
+        button {
+            background: #A50034;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #8a002b;
+        }
+
+        #status {
+            margin-top: 20px;
+            text-align: left;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Crear Admin Sergio (USACH)</h1>
+        <p>Usuario: <strong>sergio.baezv@usach.cl</strong></p>
+        <p>Clave: <strong>123456</strong></p>
+        <small>(Supabase requiere min 6 caracteres, así que usaremos 123456)</small>
+
+        <br><br>
+        <button id="btnActivate">CREAR CUENTA AHORA</button>
+        <div id="status">Cargando...</div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const btn = document.getElementById('btnActivate');
+
+        const supabaseUrl = 'https://efbkehhayoxceutvdekw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmYmtlaGhheW94Y2V1dHZkZWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMzc0NDIsImV4cCI6MjA4NTcxMzQ0Mn0.nPpkLYX-VcUjrAp47xfaIHhUN5U-PfLbjjrdTt38_k0';
+
+        // Wait for Lib
+        const checkInterval = setInterval(() => {
+            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+                clearInterval(checkInterval);
+                statusDiv.innerHTML = "✅ Listo. Presiona el botón.";
+                statusDiv.className = "";
+            }
+        }, 500);
+
+        btn.onclick = async function () {
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            btn.disabled = true;
+            statusDiv.innerHTML = "🔄 Creando usuario...";
+            statusDiv.className = "";
+
+            try {
+                // 1. Create User
+                const { data, error } = await supabase.auth.signUp({
+                    email: 'sergio.baezv@usach.cl',
+                    password: '123456' // Must correspond to min length policy
+                });
+
+                if (error) {
+                    statusDiv.innerHTML = "❌ Error: " + error.message;
+                    statusDiv.className = "error";
+                    if (error.message.includes("already registered")) {
+                        statusDiv.innerHTML += "<br>Intenta iniciar sesión con <strong>123456</strong>.";
+                    }
+                } else {
+                    statusDiv.innerHTML = "✅ Usuario Creado. Asignando rol de Admin...";
+                    statusDiv.className = "success";
+
+                    // 2. Set Admin Role if user exists
+                    if (data.user) {
+                        const { error: profileError } = await supabase
+                            .from('profiles')
+                            .update({ role: 'admin' })
+                            .eq('id', data.user.id);
+
+                        if (!profileError) {
+                            statusDiv.innerHTML += "<br>✅ Rol Admin Asignado.";
+                            statusDiv.innerHTML += "<br><br><strong>IMPORTANTE:</strong> Revisa tu correo USACH y confirma la cuenta.<br><br><a href='CRM/index.html' style='font-weight:bold; color:#A50034'>IR AL LOGIN</a>";
+                        } else {
+                            statusDiv.innerHTML += "<br>⚠️ Error asignando rol: " + profileError.message;
+                        }
+                    } else {
+                        statusDiv.innerHTML += "<br>⚠️ Revisa tu correo para confirmar.";
+                    }
+                }
+            } catch (err) {
+                statusDiv.innerHTML = "🛑 Error JS: " + err.message;
+                statusDiv.className = "error";
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+
+</html>

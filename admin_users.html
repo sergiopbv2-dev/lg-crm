@@ -370,8 +370,8 @@
             btn.innerHTML = '⏳ Creando Usuario...';
 
             try {
-                // If KAM and no company, try to force LG
-                if (role === 'kam' && !companyId) {
+                // If KAM or Admin and no company, try to force LG
+                if ((role === 'kam' || role === 'admin') && !companyId) {
                     const { data: lg } = await client.from('companies').select('id').ilike('name', 'LG%').limit(1).single();
                     if (lg) companyId = lg.id;
                 }
@@ -380,8 +380,16 @@
                     throw new Error("Debes seleccionar una empresa para los usuarios de tipo Distribuidor / Cliente Externo.");
                 }
 
-                // 1. SignUp Action (This will swap the active browser session)
-                const { data: newUser, error: signUpError } = await client.auth.signUp({
+                // Create a secondary client to prevent logging out the Admin
+                const signUpClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+                    auth: {
+                        persistSession: false,
+                        autoRefreshToken: false
+                    }
+                });
+
+                // 1. SignUp Action with secondary client
+                const { data: newUser, error: signUpError } = await signUpClient.auth.signUp({
                     email: email,
                     password: password
                 });
@@ -394,7 +402,7 @@
 
                 if (!newUser.user) throw new Error("No se pudo obtener el ID del usuario creado.");
 
-                // 2. Insert/Update Profile via PostgREST
+                // 2. Insert/Update Profile via PostgREST as ADMIN (Using main client)
                 const newProfile = {
                     id: newUser.user.id,
                     role: role,
@@ -404,15 +412,14 @@
                 const { error: profileError } = await client.from('profiles').upsert(newProfile);
                 if (profileError) {
                     console.error("Profile Error:", profileError);
-                    alert("⚠️ El usuario fue creado, pero falló la asignación de Rol. Avise a soporte.");
+                    alert("⚠️ El usuario fue creado, pero falló la asignación de Rol. Avise a soporte: " + profileError.message);
+                } else {
+                    alert(`✅ ¡Éxito!\n\nEl usuario ${email} fue creado como [${role.toUpperCase()}].\n\nPodrás gestionar su estado desde el panel inferior.`);
                 }
 
-                alert(`✅ ¡Éxito!\n\nEl usuario ${email} fue creado como [${role.toUpperCase()}].\n\nTu sesión fue cerrada por seguridad. Ahora ingresarás al sistema de nuevo.`);
-
-                // Sign out new user session to flush everything, force admin to log in again
-                await client.auth.signOut();
-                sessionStorage.clear();
-                window.location.href = 'index.html'; // back to login
+                // Reset form
+                document.getElementById('createUserForm').reset();
+                window.location.reload();
 
             } catch (err) {
                 console.error(err);

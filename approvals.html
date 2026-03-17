@@ -1399,6 +1399,14 @@
             if (!clientId) return alert("Por favor, selecciona un Cliente.");
             if (!awardDateVal) return alert("Por favor, selecciona la Fecha Award.");
 
+            const isSpecIn = document.getElementById('chkSpecIn').checked;
+            const isRetrofit = document.getElementById('chkRetrofit').checked;
+            const brands = window.getSelectedBrandArray();
+
+            if (!isSpecIn && !isRetrofit && brands.length === 0) {
+                return alert("Por favor, indica si es 'LG Spec In', 'Es Retrofit' o selecciona la Marca especificada.");
+            }
+
             // 2. Validate Items & Dates
             const awardDate = new Date(awardDateVal);
             for (let i = 0; i < quoteItems.length; i++) {

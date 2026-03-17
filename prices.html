@@ -156,7 +156,7 @@
                         <table id="productsTable">
                             <thead>
                                 <tr>
-                                    <th>Model Code</th>
+                                    <th>Model</th>
                                     <th>List Price (USD)</th>
                                     <th>Category</th>
                                     <th style="text-align:center;">Status (Active)</th>
@@ -245,8 +245,7 @@
                         <table id="costsTable">
                             <thead>
                                 <tr>
-                                    <th>Model Suffix</th>
-                                    <th>Model Base</th>
+                                    <th>Model</th>
                                     <th>Unit Variable Cost (USD)</th>
                                 </tr>
                             </thead>
@@ -417,8 +416,9 @@
                     tbody.innerHTML = data.map(p => {
                         const price = p.list_price !== undefined ? p.list_price : 0;
                         const isActive = p.is_active !== false; // handle nulls as true by default
+                        const displayModel = p.model_short || (p.model_suffix ? p.model_suffix.split('.')[0] : '-');
                         return `<tr class="product-row" style="${!isActive ? 'opacity:0.5; background:#f8f9fa;' : ''}">
-                            <td class="product-model-col" style="font-weight:bold;">${p.model_suffix || '-'}</td>
+                            <td class="product-model-col" style="font-weight:bold;" data-model="${p.model_suffix}">${displayModel}</td>
                             <td>$${(parseFloat(price) || 0).toLocaleString()}</td>
                             <td class="product-cat-col">${p.category || '-'}</td>
                             <td style="text-align:center;">
@@ -534,9 +534,12 @@
                 rows.forEach(row => {
                     // Solo actualizamos las filas que están visibles (es decir, las que cumplen el filtro)
                     if (row.style.display !== 'none') {
-                        const model = row.querySelector('.product-model-col').textContent.trim();
+                        const modelElement = row.querySelector('.product-model-col');
+                        const modelDisplay = modelElement.textContent.trim();
+                        const model = modelElement.dataset.model || modelDisplay;
+
                         const checkbox = row.querySelector('input[type="checkbox"]');
-                        if (model && model !== '-') {
+                        if (modelDisplay && modelDisplay !== '-') {
                             // Validamos si ya está en el estado correcto para no mandar queries innecesarias
                             if (checkbox && checkbox.checked !== isActive) {
                                 modelsToUpdate.push(model);
@@ -620,9 +623,10 @@
                         const listPrice = refProd ? (refProd.list_price || 0) : 0;
                         const category = refProd ? refProd.category : 'General';
 
+                        const displayModel = c.model_suffix ? c.model_suffix.split('.')[0] : '-';
+
                         return `<tr class="cost-row" data-model="${c.model_suffix}" data-cost="${cost}" data-list="${listPrice}" data-category="${category}">
-                            <td class="cost-model-col"><strong>${c.model_suffix || '-'}</strong></td>
-                            <td class="cost-base-col" style="color:#6c757d;">${(c.model_suffix || '').split('.')[0] || '-'}</td>
+                            <td class="cost-model-col"><strong>${displayModel}</strong></td>
                             <td style="font-weight:600; color:#A50034; display:flex; align-items:center;">
                                 $<input type="number" step="0.01" value="${cost.toFixed(2)}" 
                                    style="border:1px solid #ced4da; border-radius:4px; padding:6px; margin-left:5px; width:120px; font-weight:bold; color:#A50034; outline:none;" 
@@ -634,8 +638,7 @@
                     // Add an inline insert row at the top
                     const insertRowHtml = `
                         <tr style="background-color: #f8f9fa;">
-                            <td><input type="text" id="newCostSuffix" placeholder="Nuevo Model Suffix" style="width:100%; border:1px solid #ced4da; border-radius:4px; padding:6px; font-weight:bold;"></td>
-                            <td><span style="font-size:0.8em; color:#888;">(Auto-generado)</span></td>
+                            <td><input type="text" id="newCostSuffix" placeholder="Nuevo Modelo" style="width:100%; border:1px solid #ced4da; border-radius:4px; padding:6px; font-weight:bold;"></td>
                             <td style="display:flex; align-items:center; gap: 10px;">
                                 $<input type="number" id="newCostPrice" step="0.01" placeholder="0.00" style="border:1px solid #ced4da; border-radius:4px; padding:6px; width:120px; font-weight:bold; color:#A50034; outline:none;">
                                 <button onclick="window.addNewCostItem()" class="btn-primary" style="padding: 6px 12px; font-size: 0.9em;">➕ Guardar Nuevo</button>
@@ -682,8 +685,7 @@
                 const rows = document.querySelectorAll('#costsTable tbody tr.cost-row');
                 rows.forEach(row => {
                     const suffix = row.querySelector('.cost-model-col').textContent.toLowerCase();
-                    const base = row.querySelector('.cost-base-col').textContent.toLowerCase();
-                    if (suffix.includes(searchTxt) || base.includes(searchTxt)) {
+                    if (suffix.includes(searchTxt)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -1128,10 +1130,28 @@
                     let unknownCount = 0;
 
                     jsonData.forEach(row => {
-                        const rawModel = row['Model.Suffix'] || row['Model_Suffix'] || row['Model Suffix'] || row['Model'] || row['Product'];
-                        const modelSuffix = rawModel ? rawModel.toString().trim() : 'UNKNOWN';
+                        // Si la columna existe, comprobamos que sea Activo. Si no existe en el Excel, lo pasamos por alto y asumimos correcto.
+                        const statusKey = Object.keys(row).find(k => k.toLowerCase() === 'status' || k.toLowerCase() === 'estado');
+                        if (statusKey) {
+                            const val = row[statusKey].toString().trim().toLowerCase();
+                            if (val !== 'active' && val !== 'activo') {
+                                return; // Skip
+                            }
+                        }
 
-                        if (modelSuffix === 'UNKNOWN') {
+                        // Buscar dinámicamente cualquier columna que parezca "Model" o "Modelo"
+                        const modelKey = Object.keys(row).find(k => {
+                            const lk = k.toLowerCase();
+                            return lk.includes('model') || lk.includes('modelo');
+                        });
+
+                        const rawModel = modelKey ? row[modelKey] : null;
+                        const fullModel = rawModel ? rawModel.toString().trim() : 'UNKNOWN';
+
+                        // Guardar siempre el modelo BASE en la DB para homologarse con los precios, cortando desde el punto.
+                        const modelSuffix = fullModel === 'UNKNOWN' ? 'UNKNOWN' : fullModel.split('.')[0];
+
+                        if (modelSuffix === 'UNKNOWN' || modelSuffix === '') {
                             unknownCount++;
                             return;
                         }
@@ -1173,7 +1193,7 @@
                     });
 
                     if (unknownCount > 0) {
-                        alert(`Atención: Ignoramos ${unknownCount} filas sin 'Model.Suffix'.`);
+                        alert(`Atención: Ignoramos ${unknownCount} filas sin columna 'Model' válida.`);
                     }
 
                     const upsertData = Array.from(upsertDataMap.values());
@@ -1183,8 +1203,13 @@
                         return;
                     }
 
+                    // Elimina los registros anteriores presentes en la base de datos para no dejar "huérfanos" con el formato anterior y evitar duplicidades
+                    document.body.style.cursor = 'wait';
+                    await client.from('product_costs').delete().neq('model_suffix', 'DUMMY_CLEAR_ALL');
+
                     // Push to 'product_costs' table
                     const { error } = await client.from('product_costs').upsert(upsertData, { onConflict: 'model_suffix' });
+                    document.body.style.cursor = 'default';
 
                     if (error) {
                         if (error.code === '42P01') {
@@ -1193,7 +1218,7 @@
                             alert("Error uploading costs: " + error.message);
                         }
                     } else {
-                        alert(`Uploaded ${upsertData.length} variable costs successfully.`);
+                        alert(`Successfully replaced DB and uploaded ${upsertData.length} variable costs.`);
                         loadVariableCosts();
                     }
                 };

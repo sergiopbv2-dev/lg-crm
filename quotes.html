@@ -23,13 +23,47 @@
         .quote-header {
             background: white;
             padding: 1.5rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem;
+            border-radius: 8px;
+            border: 1px solid #e0e2e7;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+            margin-bottom: 1.5rem;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            /* Ensure layout doesn't shift */
+        }
+
+        .sf-card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1b2a47;
+            margin: 0 0 1rem 0;
+            border-bottom: 2px solid #f1f3f5;
+            padding-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-recalc {
+            background: #ffebee;
+            color: #A50034;
+            border: 1px solid #ffcdd2;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-recalc:hover {
+            background: #A50034;
+            color: white;
         }
 
         /* Label consistency */
@@ -464,13 +498,15 @@
                     <h3 style="margin:0" id="formTitle">Nueva Cotización</h3>
                 </div>
 
+                <!-- SECCIÓN 1: Detalles de Oportunidad -->
                 <div class="quote-header">
+                    <h4 class="sf-card-title">📝 Detalles de Oportunidad</h4>
                     <div class="form-grid-layout">
                         <!-- ROW 1 -->
                         <div class="input-group form-col-1">
                             <label>Código</label>
                             <input type="text" id="quoteCode" readonly
-                                style="background:#f0f0f0; font-weight:bold; color:#A50034; text-align:center;">
+                                style="background:#f8f9fa; font-weight:bold; color:#A50034; text-align:center; border-color:#e9ecef;">
                         </div>
                         <div class="input-group form-col-3">
                             <label>Nombre del Proyecto</label>
@@ -481,6 +517,7 @@
                         <div class="input-group form-col-1">
                             <label>Etapa</label>
                             <select id="quoteStage" style="font-weight:bold;">
+                                <option value="">Seleccione Etapa...</option>
                                 <option value="Registration">Registration</option>
                                 <option value="Access">Access</option>
                                 <option value="Spec/In">Spec/In</option>
@@ -508,18 +545,22 @@
                                 <option value="Transportation">Transportation</option>
                             </select>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- ROW 3 -->
+                <!-- SECCIÓN 2: Relacionamiento y Especificación -->
+                <div class="quote-header">
+                    <h4 class="sf-card-title">
+                        🏢 Comercial y Especificación
+                        <button onclick="window.onClientChange(document.getElementById('clientSelect').value)"
+                            class="admin-column btn-recalc" style="display:none;" type="button"
+                            title="Forzar actualización de matriz de descuentos a todos los ítems">
+                            <span>↻</span> Recalcular Descuentos
+                        </button>
+                    </h4>
+                    <div class="form-grid-layout">
                         <div class="input-group form-col-2">
-                            <label style="display:flex; justify-content:space-between; align-items:center;">
-                                Cliente
-                                <button onclick="window.onClientChange(document.getElementById('clientSelect').value)"
-                                    class="admin-column"
-                                    style="display:none; background:none; border:none; color:#A50034; cursor:pointer; font-size:0.8em; font-weight:bold; padding:0;"
-                                    type="button"
-                                    title="Forzar actualización de matriz de descuentos a todos los ítems">↻ Recalcular
-                                    Descuentos</button>
-                            </label>
+                            <label>Cliente</label>
                             <select id="clientSelect" onchange="window.onClientChange(this.value)">
                                 <option value="">Cargando...</option>
                             </select>
@@ -527,26 +568,29 @@
                         <div class="input-group form-col-2">
                             <label>Consultor</label>
                             <select id="consultantSelect">
-                                <option value="">Sin Consultor / N/A</option>
+                                <option value="">Seleccione...</option>
+                                <option value="NONE">Sin Consultor / N/A</option>
                             </select>
                         </div>
 
                         <!-- ROW 4: Qualification / Specs -->
-                        <div class="input-group form-col-1" style="justify-content:end;">
+                        <div class="input-group form-col-1">
                             <!-- Checkbox Style -->
                             <label style="opacity:0;">Spec</label> <!-- Spacer Label -->
                             <div class="checkbox-wrapper" onclick="document.getElementById('chkSpecIn').click();">
                                 <input type="checkbox" id="chkSpecIn" onclick="event.stopPropagation();"
                                     onchange="window.toggleBrands();">
-                                <label for="chkSpecIn" style="margin:0;">LG Spec In</label>
+                                <label for="chkSpecIn" style="margin:0; font-weight:600; color:#1b2a47;">LG Spec
+                                    In</label>
                             </div>
                         </div>
 
-                        <div class="input-group form-col-1" style="justify-content:end;">
+                        <div class="input-group form-col-1">
                             <label style="opacity:0;">Retro</label>
                             <div class="checkbox-wrapper" onclick="document.getElementById('chkRetrofit').click();">
                                 <input type="checkbox" id="chkRetrofit" onclick="event.stopPropagation();">
-                                <label for="chkRetrofit" style="margin:0;">Es Retrofit</label>
+                                <label for="chkRetrofit" style="margin:0; font-weight:600; color:#1b2a47;">Es
+                                    Retrofit</label>
                             </div>
                         </div>
 
@@ -573,11 +617,13 @@
                     <div
                         style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:10px;">
                         <div class="input-group" style="flex:1; min-width:300px;">
-                            <label>Buscar Producto</label>
+                            <label style="color:#1b2a47; font-weight:700;">Buscador Rápido de Productos</label>
                             <div class="search-box">
-                                <input type="text" id="productSearch" placeholder="Escribe 'Multi V' o Modelo...">
+                                <input type="text" id="productSearch" placeholder="Escribe 'Multi V' o Modelo..."
+                                    style="font-weight:600; border:2px solid #e0e2e7; box-shadow:inset 0 1px 3px rgba(0,0,0,0.02)">
                                 <button id="btnSearch"
-                                    style="padding:0 15px; cursor:pointer; background:#eee; border:none; border-radius:8px;">🔍</button>
+                                    style="padding:0 15px; cursor:pointer; background:#f1f3f5; border:1px solid #e0e2e7; border-radius:8px;">🔍
+                                    Búsqueda</button>
                             </div>
                         </div>
                         <div style="display:none;">
@@ -897,7 +943,7 @@
 
                 if (myDistributorId && !isAdmin) {
                     const { data: dData } = await db.from('distributor_discounts').select('*').eq('distributor_id', myDistributorId);
-                    if (dData) dData.forEach(dd => myDiscounts[dd.category] = dd.discount_percent);
+                    if (dData) dData.forEach(dd => myDiscounts[(dd.category || 'GENERAL').toUpperCase().replace(/[^A-Z0-9]/g, '')] = dd.discount_percent);
                 }
 
                 await loadBrands();
@@ -1137,7 +1183,7 @@
                 document.getElementById('quoteStage').value = q.stage || "Registration";
 
                 // Set New Fields
-                document.getElementById('consultantSelect').value = q.consultant_id || ""; // Load ID
+                document.getElementById('consultantSelect').value = q.consultant_id || "NONE"; // Load ID
                 document.getElementById('verticalMarketSelect').value = q.vertical_market || "";
                 document.getElementById('chkSpecIn').checked = q.is_spec_in || false;
                 document.getElementById('chkRetrofit').checked = q.is_retrofit || false;
@@ -1334,7 +1380,7 @@
 
             document.getElementById('projectName').value = '';
             document.getElementById('awardDate').value = '';
-            document.getElementById('quoteStage').value = "Registration";
+            document.getElementById('quoteStage').value = "";
             document.getElementById('clientSelect').value = "";
             document.getElementById('consultantSelect').value = "";
             document.getElementById('verticalMarketSelect').value = "";
@@ -2158,7 +2204,8 @@
                         for (const [mName, mQty] of foundItemsMap.entries()) {
                             if (dbProdMap.has(mName)) {
                                 const p = dbProdMap.get(mName);
-                                const d = myDiscounts[p.category] || 0;
+                                const catKey = (p.category || 'GENERAL').toUpperCase();
+                                const d = myDiscounts[catKey] || 0;
                                 let cost = isAdmin ? findCostForProduct(p) : 0;
 
                                 let existingIdx = quoteItems.findIndex(qi => qi.product.model_short === mName);
@@ -2233,16 +2280,29 @@
                     d.innerHTML = '<div style="padding:10px">Sin resultados activos encontrados</div>';
                     return;
                 }
-                // Deduplicar por model_short. Priorizar los que sí tengan categoría para que los descuentos apliquen correctamente
+                // Deduplicar por model_short. Priorizar los que sí tengan categoría para que los descuentos apliquen correctamente y precio mayor a 0
                 const uniqueProductsMap = new Map();
                 p.forEach(x => {
-                    if (!x.model_short) return;
-                    // Si ya existe y el que estamos viendo NO tiene categoria, no lo pisamos
-                    if (uniqueProductsMap.has(x.model_short)) {
-                        const es = uniqueProductsMap.get(x.model_short);
-                        if (es.category && !x.category) return; // Mantenemos el que tiene categoria
+                    const modelShort = x.model_short || (x.model_suffix ? x.model_suffix.split('.')[0] : null);
+                    if (!modelShort) return;
+
+                    if (uniqueProductsMap.has(modelShort)) {
+                        const es = uniqueProductsMap.get(modelShort);
+                        const esPrice = es.list_price || 0;
+                        const newPrice = x.list_price || 0;
+
+                        // Si el existente tiene precio y el nuevo no, mantener el existente.
+                        // Si el nuevo tiene precio y el existente no, reemplazar.
+                        if (esPrice > 0 && newPrice === 0) return;
+                        if (esPrice === 0 && newPrice > 0) {
+                            uniqueProductsMap.set(modelShort, x);
+                            return;
+                        }
+
+                        // Si ambos tienen precio (o ambos 0), priorizar el que tiene categoría
+                        if (es.category && !x.category) return;
                     }
-                    uniqueProductsMap.set(x.model_short, x);
+                    uniqueProductsMap.set(modelShort, x);
                 });
 
                 const uniqueProducts = Array.from(uniqueProductsMap.values()).slice(0, 10);
@@ -2250,7 +2310,7 @@
                 uniqueProducts.forEach(x => {
                     let e = document.createElement('div');
                     e.className = 'result-item';
-                    e.textContent = x.model_short;
+                    e.textContent = x.model_short || x.model_suffix;
                     e.onclick = () => { window.addItem(x) };
                     d.appendChild(e)
                 });
@@ -2274,7 +2334,7 @@
 
                     if (compId) {
                         const { data: dData } = await db.from('distributor_discounts').select('*').eq('distributor_id', compId);
-                        if (dData) dData.forEach(dd => myDiscounts[dd.category] = dd.discount_percent);
+                        if (dData) dData.forEach(dd => myDiscounts[(dd.category || 'GENERAL').toUpperCase().replace(/[^A-Z0-9]/g, '')] = dd.discount_percent);
                     }
                 } catch (e) {
                     console.warn("Could not load dynamic matrix", e);
@@ -2284,7 +2344,8 @@
             // Recalculate existing quote items unless flag is true
             if (!skipRecalc && quoteItems.length > 0) {
                 quoteItems.forEach((x, i) => {
-                    x.disc = myDiscounts[x.product.category] || 0;
+                    const catKey = (x.product.category || 'GENERAL').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    x.disc = myDiscounts[catKey] || 0;
                     x.net = x.product.list_price * ((100 - x.disc) / 100);
                 });
                 render();
@@ -2356,7 +2417,13 @@
 
             } catch (err) {
                 console.error("Error checking stock:", err);
-                alert("Error al revisar stock: " + err.message);
+                if (err.message && err.message.toLowerCase().includes('jwt')) {
+                    alert("⚠️ Tu sesión ha expirado por inactividad.\nPor favor, vuelve a iniciar sesión para continuar.");
+                    sessionStorage.clear();
+                    window.location.href = 'index.html';
+                } else {
+                    alert("Error al revisar stock: " + err.message);
+                }
             }
         };
 
@@ -2364,7 +2431,8 @@
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('productSearch').value = '';
 
-            const d = myDiscounts[p.category] || 0;
+            const catKey = (p.category || 'GENERAL').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const d = myDiscounts[catKey] || 0;
             let cost = isAdmin ? findCostForProduct(p) : 0;
 
             quoteItems.push({ product: p, qty: 1, disc: d, net: 0, delivery_date: '', cost: cost });
@@ -2421,8 +2489,9 @@
                     : `${x.disc.toFixed(1)}%`;
 
                 // Hide base logic for distributor and show Unitary Price instead
-                if (!isAdmin && typeof myDiscounts !== 'undefined' && myDiscounts[x.product.category] !== undefined) {
-                    const baseDisc = myDiscounts[x.product.category];
+                const catKey = (x.product.category || 'GENERAL').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (!isAdmin && typeof myDiscounts !== 'undefined' && myDiscounts[catKey] !== undefined) {
+                    const baseDisc = myDiscounts[catKey];
 
                     // Display list price with base discount applied
                     priceToDisplay = x.product.list_price * ((100 - baseDisc) / 100);
@@ -2585,6 +2654,22 @@
             if (!clientId) return alert("Por favor, selecciona un Cliente.");
             if (!awardDateVal) return alert("Por favor, selecciona la Fecha Award.");
 
+            const isSpecIn = document.getElementById('chkSpecIn').checked;
+            const isRetrofit = document.getElementById('chkRetrofit').checked;
+            const brands = window.getSelectedBrandArray();
+
+            if (!isSpecIn && !isRetrofit && brands.length === 0) {
+                return alert("Por favor, indica si es 'LG Spec In', 'Es Retrofit' o selecciona la Marca especificada.");
+            }
+
+            const stageVal = document.getElementById('quoteStage').value;
+            const verticalMarketVal = document.getElementById('verticalMarketSelect').value;
+            const consultantVal = document.getElementById('consultantSelect').value;
+
+            if (!stageVal) return alert("Por favor, selecciona una Etapa.");
+            if (!verticalMarketVal) return alert("Por favor, selecciona un Mercado Vertical.");
+            if (!consultantVal) return alert("Por favor, selecciona un Consultor (Indica 'Sin Consultor / N/A' si no aplica).");
+
             // 2. Validate Items & Dates
             const awardDate = new Date(awardDateVal);
             for (let i = 0; i < quoteItems.length; i++) {
@@ -2647,7 +2732,7 @@
                     loss_reason: lossReason, // Add loss reason if applicable
                     requested_discount_pct: document.getElementById('requestedDiscountPct')?.value || 0,
                     discount_justification: document.getElementById('discountJustification')?.value || null,
-                    consultant_id: document.getElementById('consultantSelect').value || null,
+                    consultant_id: document.getElementById('consultantSelect').value === 'NONE' ? null : document.getElementById('consultantSelect').value,
                     vertical_market: document.getElementById('verticalMarketSelect').value,
                     is_spec_in: document.getElementById('chkSpecIn').checked,
                     is_retrofit: document.getElementById('chkRetrofit').checked,
@@ -2728,7 +2813,7 @@
             if (!isAdmin) q = q.eq('distributor_id', myDistributorId);
 
             const { data: c } = await q;
-            s.innerHTML = '<option value="">Sin Consultor / N/A</option>';
+            s.innerHTML = '<option value="">Seleccione...</option><option value="NONE">Sin Consultor / N/A</option>';
             if (c) {
                 c.forEach(x => {
                     let o = document.createElement('option');
